@@ -2,7 +2,9 @@ package de.m3y3r.cloud;
 
 import java.io.StringReader;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -18,18 +20,11 @@ import javax.json.JsonValue.ValueType;
 
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.ClassLoaderAsset;
-import org.postgresql.ds.PGSimpleDataSource;
 import org.wildfly.swarm.container.Container;
-import org.wildfly.swarm.container.SocketBinding;
 import org.wildfly.swarm.datasources.Datasource;
 import org.wildfly.swarm.datasources.DatasourcesFraction;
+import org.wildfly.swarm.datasources.Driver;
 import org.wildfly.swarm.jaxrs.JAXRSArchive;
-import org.wildfly.swarm.jpa.JPAFraction;
-import org.wildfly.swarm.undertow.UndertowFraction;
-
-import de.m3y3r.oauth.authserver.AccessToken;
-import de.m3y3r.oauth.authserver.AuthserverApp;
-import de.m3y3r.oauth.authserver.OauthClientManager;
 
 /**
  * Start an embedded Wildfly server for usage in an cloudfoundry environment
@@ -79,11 +74,25 @@ public class App implements Runnable {
 //				}
 //			});
 			DatasourcesFraction dsf = new DatasourcesFraction();
-			container.subsystem(dsf);
 			Map<String, Datasource> dataSourceFromVcapService = getDataSourceFromVcapService();
+			Set<String> drivers = new HashSet<>();
 			for(Datasource ds: dataSourceFromVcapService.values()) {
 				dsf.datasource(ds);
+				drivers.add(ds.driver());
 			}
+			//add relevant drivers
+			for(String driver: drivers) {
+				Driver dr = new Driver(driver);
+				switch(driver) {
+				case "postgres":
+					dr.module("??");
+					dr.datasourceClassName("org.postgresql.Driver");
+					dr.xaDatasourceClassName("org.postgresql.Driver");
+					break;
+				}
+				dsf.driver(dr);
+			}
+			container.subsystem(dsf);
 
 			// Prevent JPA Fraction from installing it's default datasource fraction
 //			container.fraction(new JPAFraction()
@@ -93,12 +102,12 @@ public class App implements Runnable {
 
 			container.start();
 
-			// deploy archive
+			// deploy authorization server
 			JAXRSArchive deployment = ShrinkWrap.create(JAXRSArchive.class);
-			deployment.addPackage("de.m3y3r.oauth.authserver");
-//			deployment.addClasses(AuthserverApp.class, OauthClientManager.class, AccessToken.class);
-//			deployment.addAsWebInfResource(
-//					new ClassLoaderAsset("META-INF/persistence.xml", App.class.getClassLoader()), "classes/META-INF/persistence.xml");
+			deployment.addPackages(true, "de/m3y3r/oauth");
+			deployment.addAsWebInfResource(
+					new ClassLoaderAsset("META-INF/persistence.xml", App.class.getClassLoader()),
+					"classes/META-INF/persistence.xml");
 			deployment.addAllDependencies();
 			container.deploy(deployment);
 
@@ -174,7 +183,7 @@ public class App implements Runnable {
 
 		Datasource datasource = new Datasource(name);
 		datasource.authentication(username, password);
-		datasource.driver("org.postgresql.Driver.class");
+		datasource.driver("postgres");
 		datasource.connectionURL("jdbc:postgresql://"+ hostname + ':' + port +'/' + databaseName);
 		return datasource;
 	}

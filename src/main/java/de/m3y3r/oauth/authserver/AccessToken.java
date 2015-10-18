@@ -42,10 +42,10 @@ public class AccessToken {
 			@Context HttpServletRequest request
 	) {
 		// ensure TLS
-		if(!request.isSecure()) {
-			ErrorResponse errorMsg = new ErrorResponse(ErrorType.INVALID_REQUEST);
-			return Response.status(Response.Status.BAD_REQUEST).entity(errorMsg).build();
-		}
+//		if(!request.isSecure()) {
+//			ErrorResponse errorMsg = new ErrorResponse(ErrorType.INVALID_REQUEST);
+//			return Response.status(Response.Status.BAD_REQUEST).entity(errorMsg).build();
+//		}
 
 		if(!"password".equals(grantType)) {
 			ErrorResponse errorMsg = new ErrorResponse(ErrorType.UNSUPPORTED_GRANT_TYPE);
@@ -88,8 +88,6 @@ public class AccessToken {
 
 	/**
 	 * FIXME: check if this can be done via @Context SecurityContext
-	 * see https://jersey.java.net/nonav/documentation/snapshot/security.html#d0e12176
-	 * and jersey-client BasicAuthenticator
 	 * @param clientAuthorization
 	 * @return
 	 */
