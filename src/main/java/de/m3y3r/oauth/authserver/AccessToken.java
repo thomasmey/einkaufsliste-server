@@ -1,15 +1,15 @@
 package de.m3y3r.oauth.authserver;
 
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
-import java.util.logging.Logger;
 
+import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.FormParam;
-import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -20,6 +20,9 @@ import javax.ws.rs.core.Response;
 
 import de.m3y3r.oauth.authserver.ErrorResponse.ErrorType;
 import de.m3y3r.oauth.model.OauthClient;
+import de.m3y3r.oauth.model.OauthUser;
+import de.m3y3r.oauth.model.Token;
+import de.m3y3r.oauth.util.PasswordUtil;
 
 /**
  * rfc6749 - section 4.3.  Resource Owner Password Credentials Grant
@@ -29,7 +32,20 @@ import de.m3y3r.oauth.model.OauthClient;
 @Path(value = "/token")
 public class AccessToken {
 
-	private Logger log;
+	private Charset iso8859 = Charset.forName("ISO-8859-1");
+	private Charset utf8 = Charset.forName("UTF-8");
+
+	@Inject
+	OauthClientManager oauthClientManager;
+
+	@Inject
+	OauthUserManager oauthUserManager;
+
+	@Inject
+	PasswordUtil passwordUtil;
+
+	@Inject
+	TokenManager tokenManager;
 
 	@POST
 	@Produces(MediaType.APPLICATION_JSON)
@@ -52,9 +68,6 @@ public class AccessToken {
 			return Response.status(Response.Status.BAD_REQUEST).entity(errorMsg).build();
 		}
 
-		//FIXME/TODO: Implement rate-limit and/or alerting to prevent brute force attacks
-		/* code must go here */
-
 		// require client authentication for confidential clients and authenticate it
 		if(!isClientOkay(clientAuthorization)) {
 			ErrorResponse errorMsg = new ErrorResponse(ErrorType.INVALID_CLIENT);
@@ -75,6 +88,17 @@ public class AccessToken {
 //		}
 
 		// everything seems to be okay, create token for request
+
+		// does an still valid token exists for the combination clientId/username?
+		String clientId = null;
+		Token token = tokenManager.getToken(clientId, username);
+		if(token == null) {
+			token = tokenManager.newToken(clientId, username);
+		}
+
+		// convert into TokenResponse
+		TokenResponse tokenMsg = new TokenResponse();
+//		tokenMsg.setxx()
 //	     {
 //	         "access_token":"2YotnFZFEjr1zCsicMWpAA",
 //	         "token_type":"example",
@@ -82,7 +106,6 @@ public class AccessToken {
 //	         "refresh_token":"tGzv3JOkF0XG5Qx2TlKWIA",
 //	         "example_parameter":"example_value"
 //	       }
-		TokenResponse tokenMsg = null;
 		return Response.ok(tokenMsg).build();
 	}
 
@@ -100,6 +123,7 @@ public class AccessToken {
 
 		byte[] decodedClientAuth = Base64.getDecoder().decode(clientAuthorization.substring(prefix.length()));
 
+		// username must not include ':', RFC2617
 		int iSep = -1;
 		final int n = decodedClientAuth.length;
 		for(int i = 0; i < n; i++) {
@@ -112,15 +136,27 @@ public class AccessToken {
 			return false;
 		}
 
-		byte[] clientId = Arrays.copyOfRange(decodedClientAuth, 0, iSep);
-		//FIXME: check bounds iSep + 1 !!!
-		byte[] clientSecret = Arrays.copyOfRange(decodedClientAuth, iSep + 1, n);
+		// RFC2617, RFC2616, http://stackoverflow.com/a/9056877
+		String clientId = new String(decodedClientAuth, 0, iSep, iso8859);
 
-		OauthClient client = new OauthClientManager().getClient(clientId);
-		return false;
+		if(iSep + 1 >= n) {
+			//no password after usename!
+			return false;
+		}
+		byte[] clientSecret = Arrays.copyOfRange(decodedClientAuth, iSep + 1, n);
+		OauthClient client = oauthClientManager.getClientByClientId(clientId);
+		if(client == null)
+			return false;
+		if(!client.isActive())
+			return false;
+	
+		return passwordUtil.isPasswordOkay(client.getHashedPassword(), client.getSalt(), clientSecret);
 	}
 
 	private String[] checkScopes(String scopes) {
+		if(scopes == null)
+			return new String[0];
+
 		// section 3.3
 		String[] scopesA = scopes.split(" ");
 		List<String> resultScopes = new ArrayList<>();
@@ -143,7 +179,12 @@ public class AccessToken {
 	}
 
 	private boolean isUserOkay(String username, String password) {
-		// TODO Auto-generated method stub
-		return false;
+		OauthUser user = oauthUserManager.getUserByUsername(username);
+		if(user == null)
+			return false;
+		if(!user.isActive())
+			return false;
+
+		return passwordUtil.isPasswordOkay(user.getHashedPassword(), user.getSalt(), password.getBytes(utf8));
 	}
 }

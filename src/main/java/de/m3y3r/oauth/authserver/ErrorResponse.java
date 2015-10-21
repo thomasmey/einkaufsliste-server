@@ -1,5 +1,6 @@
 package de.m3y3r.oauth.authserver;
 
+import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -10,9 +11,11 @@ public class ErrorResponse {
 
 	private final String error;
 
-	private String error_description;
+	@XmlElement(name="error_description")
+	private String errorDescription;
 
-	private String error_uri;
+	@XmlElement(name="error_uri")
+	private String errorUri;
 
 	public enum ErrorType {INVALID_REQUEST, INVALID_CLIENT, INVALID_GRANT,
 		UNAUTHORIZED_CLIENT, UNSUPPORTED_GRANT_TYPE, INVALID_SCOPE;
@@ -30,18 +33,18 @@ public class ErrorResponse {
 	}
 
 	@JsonInclude(Include.NON_NULL)
-	public String getError_description() {
-		return error_description;
+	public String getErrorDescription() {
+		return errorDescription;
 	}
-	public void setError_description(String error_description) {
-		this.error_description = error_description;
+	public void setErrorDescription(String error_description) {
+		this.errorDescription = error_description;
 	}
 
 	@JsonInclude(Include.NON_NULL)
-	public String getError_uri() {
-		return error_uri;
+	public String getErrorUri() {
+		return errorUri;
 	}
-	public void setError_uri(String error_uri) {
-		this.error_uri = error_uri;
+	public void setErrorUri(String error_uri) {
+		this.errorUri = error_uri;
 	}
 }

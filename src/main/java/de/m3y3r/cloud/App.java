@@ -25,6 +25,7 @@ import org.wildfly.swarm.datasources.Datasource;
 import org.wildfly.swarm.datasources.DatasourcesFraction;
 import org.wildfly.swarm.datasources.Driver;
 import org.wildfly.swarm.jaxrs.JAXRSArchive;
+import org.wildfly.swarm.jpa.JPAFraction;
 
 /**
  * Start an embedded Wildfly server for usage in an cloudfoundry environment
@@ -75,30 +76,34 @@ public class App implements Runnable {
 //			});
 			DatasourcesFraction dsf = new DatasourcesFraction();
 			Map<String, Datasource> dataSourceFromVcapService = getDataSourceFromVcapService();
-			Set<String> drivers = new HashSet<>();
+			//add relevant drivers
+			{
+				Set<String> drivers = new HashSet<>();
+				for(Datasource ds: dataSourceFromVcapService.values()) {
+					drivers.add(ds.driver());
+				}
+				for(String driver: drivers) {
+					Driver dr = new Driver(driver);
+					switch(driver) {
+					case "postgres":
+						dr.module("org.postgresql.postgres");
+						dr.xaDatasourceClassName("org.postgresql.xa.PGXADataSource");
+						break;
+					}
+					dsf.driver(dr);
+				}
+			}
+			// add all datasources
 			for(Datasource ds: dataSourceFromVcapService.values()) {
 				dsf.datasource(ds);
-				drivers.add(ds.driver());
-			}
-			//add relevant drivers
-			for(String driver: drivers) {
-				Driver dr = new Driver(driver);
-				switch(driver) {
-				case "postgres":
-					dr.module("??");
-					dr.datasourceClassName("org.postgresql.Driver");
-					dr.xaDatasourceClassName("org.postgresql.Driver");
-					break;
-				}
-				dsf.driver(dr);
 			}
 			container.subsystem(dsf);
 
-			// Prevent JPA Fraction from installing it's default datasource fraction
-//			container.fraction(new JPAFraction()
-//					.inhibitDefaultDatasource()
-//					.defaultDatasourceName("MyDS")
-//					);
+			container.fraction(new JPAFraction()
+					// Prevent JPAFraction from installing it's default datasource fraction
+					.inhibitDefaultDatasource()
+					.defaultDatasourceName("elephantsql-c6c60")
+					);
 
 			container.start();
 
@@ -108,6 +113,9 @@ public class App implements Runnable {
 			deployment.addAsWebInfResource(
 					new ClassLoaderAsset("META-INF/persistence.xml", App.class.getClassLoader()),
 					"classes/META-INF/persistence.xml");
+			deployment.addAsWebInfResource(
+					new ClassLoaderAsset("META-INF/load.sql", App.class.getClassLoader()),
+					"classes/META-INF/load.sql");
 			deployment.addAllDependencies();
 			container.deploy(deployment);
 

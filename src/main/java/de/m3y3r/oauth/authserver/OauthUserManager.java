@@ -7,23 +7,23 @@ import javax.inject.Inject;
 import javax.persistence.NoResultException;
 import javax.persistence.TypedQuery;
 
-import de.m3y3r.oauth.model.OauthClient;
+import de.m3y3r.oauth.model.OauthUser;
 
 @ApplicationScoped
-public class OauthClientManager {
+public class OauthUserManager {
 
 	private Logger log;
 
 	@Inject
 	PersistenceHelper helper;
 
-	public OauthClientManager() {
-		log = Logger.getLogger(OauthClientManager.class.getName());
+	public OauthUserManager() {
+		log = Logger.getLogger(OauthUserManager.class.getName());
 	}
 
-	public OauthClient getClientByClientId(String clientId) {
-		TypedQuery<OauthClient> q = helper.getEntityManager().createNamedQuery("OauthClient.byClientId", OauthClient.class);
-		q.setParameter("clientId", clientId);
+	public OauthUser getUserByUsername(String username) {
+		TypedQuery<OauthUser> q = helper.getEntityManager().createNamedQuery("OauthUser.byUsername", OauthUser.class);
+		q.setParameter("username", username);
 		try {
 			return q.getSingleResult();
 		} catch(NoResultException e) {
