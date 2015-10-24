@@ -107,8 +107,10 @@ public class App implements Runnable {
 
 			container.start();
 
-			// deploy authorization server
+			// deploy app
 			JAXRSArchive deployment = ShrinkWrap.create(JAXRSArchive.class);
+			deployment.addPackages(true, "de/m3y3r/ekl");
+			deployment.addPackages(true, "de/m3y3r/common");
 			deployment.addPackages(true, "de/m3y3r/oauth");
 			deployment.addAsWebInfResource(
 					new ClassLoaderAsset("META-INF/persistence.xml", App.class.getClassLoader()),

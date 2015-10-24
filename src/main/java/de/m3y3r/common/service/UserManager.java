@@ -1,4 +1,4 @@
-package de.m3y3r.oauth.authserver;
+package de.m3y3r.common.service;
 
 import java.util.logging.Logger;
 
@@ -7,22 +7,23 @@ import javax.inject.Inject;
 import javax.persistence.NoResultException;
 import javax.persistence.TypedQuery;
 
-import de.m3y3r.oauth.model.OauthUser;
+import de.m3y3r.common.model.User;
+import de.m3y3r.oauth.authserver.PersistenceHelper;
 
 @ApplicationScoped
-public class OauthUserManager {
+public class UserManager {
 
 	private Logger log;
 
 	@Inject
 	PersistenceHelper helper;
 
-	public OauthUserManager() {
-		log = Logger.getLogger(OauthUserManager.class.getName());
+	public UserManager() {
+		log = Logger.getLogger(UserManager.class.getName());
 	}
 
-	public OauthUser getUserByUsername(String username) {
-		TypedQuery<OauthUser> q = helper.getEntityManager().createNamedQuery("OauthUser.byUsername", OauthUser.class);
+	public User getUserByUsername(String username) {
+		TypedQuery<User> q = helper.getEntityManager().createNamedQuery("User.byUsername", User.class);
 		q.setParameter("username", username);
 		try {
 			return q.getSingleResult();

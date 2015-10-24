@@ -1,4 +1,4 @@
-package de.m3y3r.oauth.authserver;
+package de.m3y3r.oauth.authserver.api;
 
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -14,13 +14,19 @@ import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.CacheControl;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import de.m3y3r.common.model.User;
+import de.m3y3r.common.service.UserManager;
+import de.m3y3r.oauth.authserver.ErrorResponse;
+import de.m3y3r.oauth.authserver.OauthClientManager;
+import de.m3y3r.oauth.authserver.TokenManager;
+import de.m3y3r.oauth.authserver.TokenResponse;
 import de.m3y3r.oauth.authserver.ErrorResponse.ErrorType;
 import de.m3y3r.oauth.model.OauthClient;
-import de.m3y3r.oauth.model.OauthUser;
 import de.m3y3r.oauth.model.Token;
 import de.m3y3r.oauth.util.PasswordUtil;
 
@@ -39,7 +45,7 @@ public class AccessToken {
 	OauthClientManager oauthClientManager;
 
 	@Inject
-	OauthUserManager oauthUserManager;
+	UserManager oauthUserManager;
 
 	@Inject
 	PasswordUtil passwordUtil;
@@ -98,7 +104,7 @@ public class AccessToken {
 
 		// convert into TokenResponse
 		TokenResponse tokenMsg = new TokenResponse();
-//		tokenMsg.setxx()
+		//		tokenMsg.setxx()
 //	     {
 //	         "access_token":"2YotnFZFEjr1zCsicMWpAA",
 //	         "token_type":"example",
@@ -106,7 +112,10 @@ public class AccessToken {
 //	         "refresh_token":"tGzv3JOkF0XG5Qx2TlKWIA",
 //	         "example_parameter":"example_value"
 //	       }
-		return Response.ok(tokenMsg).build();
+		CacheControl cacheControl = new CacheControl();
+		cacheControl.setNoStore(true);
+		cacheControl.setNoCache(true);
+		return Response.ok(tokenMsg).cacheControl(cacheControl).build();
 	}
 
 	/**
@@ -179,7 +188,7 @@ public class AccessToken {
 	}
 
 	private boolean isUserOkay(String username, String password) {
-		OauthUser user = oauthUserManager.getUserByUsername(username);
+		User user = oauthUserManager.getUserByUsername(username);
 		if(user == null)
 			return false;
 		if(!user.isActive())
