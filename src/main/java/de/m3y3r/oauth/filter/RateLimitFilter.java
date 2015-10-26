@@ -59,18 +59,15 @@ public class RateLimitFilter implements Filter {
 
 	Entry maintain(String ipAddr, long ts) {
 
-		Entry e = null;
-		synchronized (entries) {
-			e = entries.get(ipAddr);
-			// already existing ip address
-			if(e != null) {
-				e.noHits++;
-			} else {
-				// new ip address
-				e = new Entry();
-				e.firstTs = ts;
-				entries.put(ipAddr, e);
-			}
+		Entry e = entries.get(ipAddr);
+		if(e != null) {
+		// already existing ip address
+			e.noHits++;
+		} else {
+		// new ip address
+			e = new Entry();
+			e.firstTs = ts;
+			entries.put(ipAddr, e);
 		}
 
 		e.prevTs = e.currentTs;

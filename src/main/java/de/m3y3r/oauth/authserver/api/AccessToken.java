@@ -1,5 +1,6 @@
 package de.m3y3r.oauth.authserver.api;
 
+import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -25,6 +26,7 @@ import de.m3y3r.oauth.authserver.ErrorResponse;
 import de.m3y3r.oauth.authserver.OauthClientManager;
 import de.m3y3r.oauth.authserver.TokenManager;
 import de.m3y3r.oauth.authserver.TokenResponse;
+import de.m3y3r.oauth.authserver.TokenResponse.TokenType;
 import de.m3y3r.oauth.authserver.ErrorResponse.ErrorType;
 import de.m3y3r.oauth.model.OauthClient;
 import de.m3y3r.oauth.model.Token;
@@ -81,7 +83,8 @@ public class AccessToken {
 		}
 
 		//validate the resource owner password credentials
-		if(!isUserOkay(username, password)) {
+		User user = oauthUserManager.getUserByUsername(username);
+		if(!isUserOkay(user, password)) {
 			ErrorResponse errorMsg = new ErrorResponse(ErrorType.INVALID_REQUEST);
 			return Response.status(Response.Status.BAD_REQUEST).entity(errorMsg).build();
 		}
@@ -100,18 +103,25 @@ public class AccessToken {
 		Token token = tokenManager.getToken(clientId, username);
 		if(token == null) {
 			token = tokenManager.newToken(clientId, username);
+			token.getContext().setUser(user);
 		}
+		assert user.getUsername().equals(token.getContext().getUser().getUsername());
 
 		// convert into TokenResponse
 		TokenResponse tokenMsg = new TokenResponse();
-		//		tokenMsg.setxx()
-//	     {
-//	         "access_token":"2YotnFZFEjr1zCsicMWpAA",
-//	         "token_type":"example",
-//	         "expires_in":3600,
-//	         "refresh_token":"tGzv3JOkF0XG5Qx2TlKWIA",
-//	         "example_parameter":"example_value"
-//	       }
+		tokenMsg.setTokenType(TokenType.BEARER);
+		ByteBuffer bb = ByteBuffer.allocate(16);
+		bb.putLong(token.getId().getMostSignificantBits());
+		bb.putLong(token.getId().getLeastSignificantBits());
+		bb.flip();
+		ByteBuffer encodedId = Base64.getEncoder().encode(bb);
+		byte[] ba = new byte[encodedId.limit()];
+		encodedId.get(ba);
+
+		tokenMsg.setAccesToken(new String(ba, iso8859));
+		tokenMsg.setExpiresIn(token.getExpiresIn());
+
+		//FIXME: Also set for error case?!
 		CacheControl cacheControl = new CacheControl();
 		cacheControl.setNoStore(true);
 		cacheControl.setNoCache(true);
@@ -187,8 +197,8 @@ public class AccessToken {
 		return resultScopes.toArray(new String[0]);
 	}
 
-	private boolean isUserOkay(String username, String password) {
-		User user = oauthUserManager.getUserByUsername(username);
+	private boolean isUserOkay(User user, String password) {
+
 		if(user == null)
 			return false;
 		if(!user.isActive())
