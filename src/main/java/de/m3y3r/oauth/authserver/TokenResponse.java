@@ -28,4 +28,36 @@ public class TokenResponse {
 	@JsonInclude(Include.NON_NULL)
 	@XmlElement(name="scope")
 	private String scope;
+
+	public String getAccesToken() {
+		return accesToken;
+	}
+
+	public void setAccesToken(String accesToken) {
+		this.accesToken = accesToken;
+	}
+
+	public TokenType getTokenType() {
+		return tokenType;
+	}
+
+	public void setTokenType(TokenType tokenType) {
+		this.tokenType = tokenType;
+	}
+
+	public Long getExpiresIn() {
+		return expiresIn;
+	}
+
+	public void setExpiresIn(Long expiresIn) {
+		this.expiresIn = expiresIn;
+	}
+
+	public String getScope() {
+		return scope;
+	}
+
+	public void setScope(String scope) {
+		this.scope = scope;
+	}
 }

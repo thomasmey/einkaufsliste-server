@@ -9,6 +9,9 @@ import javax.validation.constraints.NotNull;
 import de.m3y3r.common.model.User;
 
 @Entity
+@NamedQueries( {
+	@NamedQuery(name="Einkaufsliste.byOwner", query="select o from Einkaufsliste o where o.owner = :owner")
+})
 public class Einkaufsliste implements Serializable {
 
 	private static final long serialVersionUID = 1L;
