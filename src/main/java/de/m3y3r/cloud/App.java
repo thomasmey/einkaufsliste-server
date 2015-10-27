@@ -20,15 +20,15 @@ import javax.json.JsonValue.ValueType;
 
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.ClassLoaderAsset;
+import org.wildfly.swarm.config.datasources.DataSource;
 import org.wildfly.swarm.container.Container;
-import org.wildfly.swarm.datasources.Datasource;
 import org.wildfly.swarm.datasources.DatasourcesFraction;
-import org.wildfly.swarm.datasources.Driver;
+import org.wildfly.swarm.datasources.JDBCDriver;
 import org.wildfly.swarm.jaxrs.JAXRSArchive;
 import org.wildfly.swarm.jpa.JPAFraction;
 
 /**
- * Start an embedded Wildfly server for usage in an cloudfoundry environment
+ * Start an embedded Wildfly server for usage in an cloud foundry environment
  * @author thomas
  */
 public class App implements Runnable {
@@ -75,34 +75,35 @@ public class App implements Runnable {
 //				}
 //			});
 			DatasourcesFraction dsf = new DatasourcesFraction();
-			Map<String, Datasource> dataSourceFromVcapService = getDataSourceFromVcapService();
+//			dsf.jdbcDriver(childKey, config)
+			Map<String, DataSource> dataSourceFromVcapService = getDataSourceFromVcapService();
 			//add relevant drivers
 			{
 				Set<String> drivers = new HashSet<>();
-				for(Datasource ds: dataSourceFromVcapService.values()) {
-					drivers.add(ds.driver());
+				for(DataSource ds: dataSourceFromVcapService.values()) {
+					drivers.add(ds.driverName());
 				}
 				for(String driver: drivers) {
-					Driver dr = new Driver(driver);
+					JDBCDriver dr = new JDBCDriver(driver);
 					switch(driver) {
 					case "postgres":
-						dr.module("org.postgresql.postgres");
-						dr.xaDatasourceClassName("org.postgresql.xa.PGXADataSource");
+						dr.driverModuleName("org.postgresql.postgres");
+						dr.driverXaDatasourceClassName("org.postgresql.xa.PGXADataSource");
 						break;
 					}
-					dsf.driver(dr);
+					dsf.jdbcDriver(dr);
 				}
 			}
 			// add all datasources
-			for(Datasource ds: dataSourceFromVcapService.values()) {
-				dsf.datasource(ds);
+			for(DataSource ds: dataSourceFromVcapService.values()) {
+				dsf.dataSource(ds);
 			}
-			container.subsystem(dsf);
+			container.fraction(dsf);
 
 			container.fraction(new JPAFraction()
 					// Prevent JPAFraction from installing it's default datasource fraction
 					.inhibitDefaultDatasource()
-					.defaultDatasourceName("elephantsql-c6c60")
+					.defaultDatasource("jboss/datasources/elephantsql-c6c60")
 					);
 
 			container.start();
@@ -130,9 +131,9 @@ public class App implements Runnable {
 	 * this expects VCAP_SERVICES v2 style json
 	 * @return
 	 */
-	private Map<String, Datasource> getDataSourceFromVcapService() {
+	private Map<String, DataSource> getDataSourceFromVcapService() {
 
-		Map<String, Datasource> datasources = new HashMap<>();
+		Map<String, DataSource> datasources = new HashMap<>();
 
 		// http://docs.run.pivotal.io/devguide/deploy-apps/environment-variable.html
 		String vcapService = System.getenv(CF_VCAP_SERVICES);
@@ -162,7 +163,7 @@ public class App implements Runnable {
 					String pUri = jsCred.getString("uri");
 
 					String name = dbEntry.getString("name");
-					Datasource ds = pgDataSourceFromUrl(pUri, name);
+					DataSource ds = pgDataSourceFromUrl(pUri, name);
 					datasources.put(name, ds);
 				}
 				break;
@@ -175,7 +176,7 @@ public class App implements Runnable {
 		return datasources;
 	}
 
-	public static Datasource pgDataSourceFromUrl(String pUri, String name) {
+	public static DataSource pgDataSourceFromUrl(String pUri, String name) {
 
 		/* sadly the postgres jdbc driver has no convert utility
 		 * to convert a connection string to a jdbc url :-(
@@ -191,10 +192,11 @@ public class App implements Runnable {
 		String port = matcher.group(4);
 		String databaseName = matcher.group(5);
 
-		Datasource datasource = new Datasource(name);
-		datasource.authentication(username, password);
-		datasource.driver("postgres");
-		datasource.connectionURL("jdbc:postgresql://"+ hostname + ':' + port +'/' + databaseName);
+		DataSource datasource = new DataSource(name);
+		datasource.userName(username);
+		datasource.password(password);
+		datasource.driverName("postgres");
+		datasource.connectionUrl("jdbc:postgresql://"+ hostname + ':' + port +'/' + databaseName);
 		return datasource;
 	}
 }

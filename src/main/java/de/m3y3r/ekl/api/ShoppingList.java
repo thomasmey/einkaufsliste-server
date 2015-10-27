@@ -16,6 +16,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 
 import de.m3y3r.common.model.User;
+import de.m3y3r.ekl.api.mapper.EinkaufslisteMapper;
 import de.m3y3r.ekl.api.model.ShoppingListGet;
 import de.m3y3r.ekl.api.model.ShoppingListPost;
 import de.m3y3r.ekl.filter.BearerTokenFilter;
@@ -29,6 +30,9 @@ public class ShoppingList {
 	@Inject
 	PersistenceHelper helper;
 
+	@Inject
+	EinkaufslisteMapper eklMapper;
+
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	public List<ShoppingListGet> getLists(@Context HttpServletRequest request) {
@@ -38,7 +42,7 @@ public class ShoppingList {
 		q.setParameter("owner", token.getContext().getUser());
 		List<Einkaufsliste> eklen = q.getResultList();
 
-		return new ArrayList<>();
+		return eklMapper.map(eklen);
 	}
 
 	@POST
