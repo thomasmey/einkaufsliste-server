@@ -12,3 +12,5 @@ INSERT INTO users_role( user_id, roles_id) VALUES (2, 1);
 INSERT INTO einkaufsliste( id, name, owner_id) VALUES (1, 'kw45', 1);
 INSERT INTO item( id, data_version, menge, name, status, unit, ekl_id) VALUES (1, 1, 3, 'Körniger Frischkäse', 'needed', 'unit', 1);
 INSERT INTO item( id, data_version, menge, name, status, unit, ekl_id) VALUES (2, 1, 10, 'Diät Puddings', 'needed', 'unit', 1);
+
+insert into id_mapping (id, id_intern, object_name, id_extern) values ( 1, 1, 'einkaufsliste', 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11');
