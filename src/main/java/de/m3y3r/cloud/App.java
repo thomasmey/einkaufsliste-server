@@ -119,6 +119,9 @@ public class App implements Runnable {
 			deployment.addAsWebInfResource(
 					new ClassLoaderAsset("META-INF/load.sql", App.class.getClassLoader()),
 					"classes/META-INF/load.sql");
+			deployment.addAsWebInfResource(
+					new ClassLoaderAsset("build.properties", App.class.getClassLoader()),
+					"classes/build.properties");
 			deployment.addAllDependencies();
 			container.deploy(deployment);
 
