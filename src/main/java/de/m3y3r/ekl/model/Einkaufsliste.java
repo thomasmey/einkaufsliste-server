@@ -48,4 +48,7 @@ public class Einkaufsliste implements Serializable {
 	public void setItems(List<Item> items) {
 		this.items = items;
 	}
+	public User getOwner() {
+		return owner;
+	}
 }

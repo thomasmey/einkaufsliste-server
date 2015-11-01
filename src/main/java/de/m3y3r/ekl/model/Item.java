@@ -36,4 +36,47 @@ public class Item implements Serializable {
 	@Column(nullable=false)
 	@Enumerated(EnumType.STRING)
 	private ItemStatus status;
+
+	public Integer getId() {
+		return id;
+	}
+	public void setId(Integer id) {
+		this.id = id;
+	}
+	public String getName() {
+		return name;
+	}
+	public void setName(String name) {
+		this.name = name;
+	}
+	public BigDecimal getMenge() {
+		return menge;
+	}
+	public void setMenge(BigDecimal menge) {
+		this.menge = menge;
+	}
+	public ItemUnit getUnit() {
+		return unit;
+	}
+	public void setUnit(ItemUnit unit) {
+		this.unit = unit;
+	}
+	public Einkaufsliste getEkl() {
+		return ekl;
+	}
+	public void setEkl(Einkaufsliste ekl) {
+		this.ekl = ekl;
+	}
+	public int getDataVersion() {
+		return dataVersion;
+	}
+	public void setDataVersion(int dataVersion) {
+		this.dataVersion = dataVersion;
+	}
+	public ItemStatus getStatus() {
+		return status;
+	}
+	public void setStatus(ItemStatus status) {
+		this.status = status;
+	}
 }

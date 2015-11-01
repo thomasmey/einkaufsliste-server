@@ -19,6 +19,8 @@ public class IdMapping implements Serializable {
 
 	private static final long serialVersionUID = 1L;
 
+	public static final String ON_EKL = "einkaufsliste";
+
 	@Id
 	@GeneratedValue(strategy=GenerationType.SEQUENCE)
 	private Integer id;
