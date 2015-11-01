@@ -24,8 +24,9 @@ public class BuildInfo {
 		p.load(inStream);
 		JsonObjectBuilder job = Json.createObjectBuilder();
 		for(Entry e : p.entrySet()) {
-			job.add(e.getValue().toString(), e.getKey().toString());
+			job.add(e.getKey().toString(), e.getValue().toString());
 		}
+
 		return job.build();
 	}
 }
