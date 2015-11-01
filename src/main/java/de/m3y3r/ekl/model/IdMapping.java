@@ -9,7 +9,11 @@ import javax.validation.constraints.NotNull;
 @Entity
 @Table(name="id_mapping",
 	uniqueConstraints = {
-		@UniqueConstraint(columnNames = { "object_name", "id_intern" })
+		@UniqueConstraint(columnNames = {"object_name", "id_intern"}),
+		@UniqueConstraint(columnNames = {"id_extern"})
+})
+@NamedQueries( {
+	@NamedQuery(name = "IdMapping.getByIdIntern", query = "SELECT o FROM IdMapping o where o.idIntern = :idIntern and o.objectName = :objectName")
 })
 public class IdMapping implements Serializable {
 

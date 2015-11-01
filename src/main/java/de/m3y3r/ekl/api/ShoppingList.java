@@ -1,6 +1,5 @@
 package de.m3y3r.ekl.api;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -15,7 +14,6 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 
-import de.m3y3r.common.model.User;
 import de.m3y3r.ekl.api.mapper.EinkaufslisteMapper;
 import de.m3y3r.ekl.api.model.ShoppingListGet;
 import de.m3y3r.ekl.api.model.ShoppingListPost;
