@@ -4,6 +4,7 @@ import java.io.StringReader;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -14,6 +15,7 @@ import javax.json.Json;
 import javax.json.JsonArray;
 import javax.json.JsonObject;
 import javax.json.JsonReader;
+import javax.json.JsonString;
 import javax.json.JsonStructure;
 import javax.json.JsonValue;
 import javax.json.JsonValue.ValueType;
@@ -35,6 +37,9 @@ public class App implements Runnable {
 
 	private static final String CF_ENV_PORT = "PORT";
 	private static final String CF_VCAP_SERVICES = "VCAP_SERVICES";
+
+	private static final String ENV_DS_MAP = "DATASOURCE_MAP";
+	private static final String ENV_DS_DEFAULT = "DATASOURCE_DEFAULT";
 
 	private Logger log;
 
@@ -63,17 +68,11 @@ public class App implements Runnable {
 		 */
 
 		String port = System.getenv(CF_ENV_PORT);
+		System.setProperty("jboss.http.port", port);
 
 		try {
 			Container container = new Container();
 
-			// we want ssl only!
-//			container.subsystem(new UndertowFraction() {
-//				@Override
-//				public void initialize(Container.InitContext initContext) {
-//					initContext.socketBinding(new SocketBinding("https").port(port));
-//				}
-//			});
 			DatasourcesFraction dsf = new DatasourcesFraction();
 //			dsf.jdbcDriver(childKey, config)
 			Map<String, DataSource> dataSourceFromVcapService = getDataSourceFromVcapService();
@@ -103,7 +102,7 @@ public class App implements Runnable {
 			container.fraction(new JPAFraction()
 					// Prevent JPAFraction from installing it's default datasource fraction
 					.inhibitDefaultDatasource()
-					.defaultDatasource("jboss/datasources/elephantsql-c6c60")
+					.defaultDatasource("jboss/datasources/" + System.getenv(ENV_DS_DEFAULT))
 					);
 
 			container.start();
@@ -144,6 +143,8 @@ public class App implements Runnable {
 			return datasources;
 		}
 
+		Map<String, String> dsMap = getDatasourceMapping();
+
 		StringReader reader = new StringReader(vcapService);
 		JsonReader jsonReader = Json.createReader(reader);
 
@@ -166,7 +167,7 @@ public class App implements Runnable {
 					String pUri = jsCred.getString("uri");
 
 					String name = dbEntry.getString("name");
-					DataSource ds = pgDataSourceFromUrl(pUri, name);
+					DataSource ds = pgDataSourceFromUrl(pUri, dsMap.get(name));
 					datasources.put(name, ds);
 				}
 				break;
@@ -177,6 +178,25 @@ public class App implements Runnable {
 		}
 
 		return datasources;
+	}
+
+	private Map<String, String> getDatasourceMapping() {
+		String dsMapping = System.getenv(ENV_DS_MAP);
+
+		StringReader reader = new StringReader(dsMapping);
+		JsonReader jsonReader = Json.createReader(reader);
+
+		JsonStructure js = jsonReader.read();
+		assert js.getValueType() == ValueType.OBJECT;
+
+		JsonObject jo = (JsonObject) js;
+
+		Map<String, String> dsMap = new HashMap<>();
+		for(Entry<String, JsonValue> e: jo.entrySet()) {
+			dsMap.put(e.getKey(), ((JsonString)e.getValue()).getString());
+		}
+
+		return dsMap;
 	}
 
 	public static DataSource pgDataSourceFromUrl(String pUri, String name) {

@@ -65,11 +65,11 @@ public class AccessToken {
 			@NotNull @HeaderParam("Authorization") String clientAuthorization,
 			@Context HttpServletRequest request
 	) {
-		// ensure TLS
-//		if(!request.isSecure()) {
-//			ErrorResponse errorMsg = new ErrorResponse(ErrorType.INVALID_REQUEST);
-//			return Response.status(Response.Status.BAD_REQUEST).entity(errorMsg).build();
-//		}
+		// ensure TLS or in bluemix environment that "x-forwarded-proto" is https
+		if(!(request.isSecure() || "https".equals(request.getHeader("x-forwarded-proto")))) {
+			ErrorResponse errorMsg = new ErrorResponse(ErrorType.INVALID_REQUEST);
+			return Response.status(Response.Status.BAD_REQUEST).entity(errorMsg).build();
+		}
 
 		if(!"password".equals(grantType)) {
 			ErrorResponse errorMsg = new ErrorResponse(ErrorType.UNSUPPORTED_GRANT_TYPE);
