@@ -37,6 +37,11 @@ public class BearerTokenFilter implements Filter {
 
 		HttpServletRequest hreq = (HttpServletRequest) sreq;
 		HttpServletResponse hresp = (HttpServletResponse) sresp;
+
+		if("/buildinfo".equals(hreq.getPathInfo())) {
+			fc.doFilter(sreq, sresp);
+			return;
+		}
 		String authHeader = hreq.getHeader("Authorization");
 		String bearer = "Bearer ";
 		if(authHeader == null || !authHeader.startsWith(bearer)) {

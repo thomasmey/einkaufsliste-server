@@ -125,6 +125,9 @@ public class App implements Runnable {
 			container.deploy(deployment);
 
 		} catch(Exception e) {
+			if(log == null)
+				log = Logger.getLogger(App.class.getName());
+
 			log.log(Level.SEVERE, "server failed", e);
 		}
 	}
