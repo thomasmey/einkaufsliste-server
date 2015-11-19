@@ -139,15 +139,34 @@
 						</goals>
 					</execution>
 					<execution>
-						<id>run</id>
+						<id>start-server</id>
 						<phase>pre-integration-test</phase>
 						<goals>
-							<goal>run</goal>
+							<goal>start</goal>
 						</goals>
 						<configuration>
-							<environmentFile>${project.build.testResources[0].directory}/integration-test.env</environmentFile>
-							<waitForProcess>false</waitForProcess>
+							<environmentFile>${project.build.testResources[0].directory}/integration-test-env.properties</environmentFile>
 						</configuration>
+					</execution>
+					<execution>
+						<id>stop-server</id>
+						<phase>post-integration-test</phase>
+						<goals>
+							<goal>stop</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-failsafe-plugin</artifactId>
+				<version>2.19</version>
+				<executions>
+					<execution>
+						<goals>
+							<goal>integration-test</goal>
+							<goal>verify</goal>
+						</goals>
 					</execution>
 				</executions>
 			</plugin>
@@ -165,7 +184,7 @@
 				</configuration>
 				<executions>
 					<execution>
-						<id>process</id>
+						<id>mapstruct-generate-sources</id>
 						<phase>generate-sources</phase>
 						<goals>
 							<goal>process</goal>
@@ -179,19 +198,6 @@
 						<version>${mapstruct.version}</version>
 					</dependency>
 				</dependencies>
-			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-failsafe-plugin</artifactId>
-				<version>2.19</version>
-				<executions>
-					<execution>
-						<goals>
-							<goal>integration-test</goal>
-							<goal>verify</goal>
-						</goals>
-					</execution>
-				</executions>
 			</plugin>
 		</plugins>
 	</build>

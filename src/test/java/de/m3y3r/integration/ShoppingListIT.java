@@ -2,10 +2,12 @@ package de.m3y3r.integration;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.ConnectException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.Base64;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
@@ -25,6 +27,8 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class ShoppingListIT {
+
+	private static final String INTEGRATION_TEST_ENV = "/integration-test-env.properties";
 
 	private static String baseUrl = "http://localhost:";
 
@@ -56,12 +60,12 @@ public class ShoppingListIT {
 		long maxWaitTime = System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(2);
 		URL url = new URL(baseUrl + pingEndpoint);
 		System.out.println("url=" + url);
-		URLConnection uc = url.openConnection();
 
 		boolean okay = false;
 		System.out.println("waiting for server: ");
 		while(System.currentTimeMillis() < maxWaitTime) {
 			try {
+				URLConnection uc = url.openConnection();
 				HttpURLConnection huc = (HttpURLConnection) uc;
 				int responseCode = huc.getResponseCode();
 				if(responseCode == 200) {
@@ -83,23 +87,32 @@ public class ShoppingListIT {
 	}
 
 	private static Map<String, String> readEnvs() throws IOException {
-		InputStream inStream = ShoppingListIT.class.getResourceAsStream("/integration-test.env");
+		InputStream inStream = ShoppingListIT.class.getResourceAsStream(INTEGRATION_TEST_ENV);
 		Properties p = new Properties();
 		p.load(inStream);
+		inStream.close();
 		return (Map)p;
 	}
 
 	@Test
-	public void testCreateShoppingList() throws OAuthSystemException, OAuthProblemException {
+	public void testCreateShoppingList() throws OAuthSystemException, OAuthProblemException, UnsupportedEncodingException {
 
 		// establish oauth token
+
+		/* the Apache Oltu library seems to be completely unusable/broken!
+		 * look at this below code! it's totally not intuitive!
+		 */
+		String idSecret = clientId + ':' + clientSecret;
+		String bearer = Base64.getEncoder().encodeToString(idSecret.getBytes("UTF-8"));
 		OAuthClientRequest request = OAuthClientRequest.tokenLocation(baseUrl + tokenEndpoint)
-				.setClientId(clientId)
-				.setClientSecret(clientSecret)
+				.setParameter("key-doesnt-matter", bearer)
+				.buildHeaderMessage();
+		OAuthClientRequest r2 = OAuthClientRequest.tokenLocation(baseUrl + tokenEndpoint)
 				.setGrantType(GrantType.PASSWORD)
 				.setUsername(username)
 				.setPassword(password)
 				.buildBodyMessage();
+		request.setBody(r2.getBody());
 
 		OAuthClient oAuthClient = new OAuthClient(new URLConnectionClient());
 
