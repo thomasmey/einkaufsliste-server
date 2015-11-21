@@ -19,6 +19,7 @@
 		<hibernate.jpa.version>5.0.2.Final</hibernate.jpa.version>
 		<junit.version>4.12</junit.version>
 		<wildfly-swarm.version>1.0.0.Alpha5</wildfly-swarm.version>
+		<wildfly-swarm-plugin.version>1.0.0.Alpha6-SNAPSHOT</wildfly-swarm-plugin.version>
 		<mapstruct.version>1.0.0.CR2</mapstruct.version>
 		<json-p.version>1.0.4</json-p.version>
 		<!-- should match the libraries used by the wildfly-swarm modules -->
@@ -127,7 +128,7 @@
 			<plugin>
 				<groupId>org.wildfly.swarm</groupId>
 				<artifactId>wildfly-swarm-plugin</artifactId>
-				<version>${wildfly-swarm.version}</version>
+				<version>${wildfly-swarm-plugin.version}</version>
 				<configuration>
 					<mainClass>de.m3y3r.cloud.App</mainClass>
 				</configuration>

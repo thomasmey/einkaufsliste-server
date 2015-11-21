@@ -39,18 +39,8 @@ public class ShoppingListIT {
 	// oauth
 	private String tokenEndpoint =  "/oauth/token";
 
-	//FIXME: move to integration-test.env!
-	// client
-	private String clientId = "clientId";
-	private String clientSecret = "supersecret";
-
-	// user
-	private String username = "username";
-	private String password = "password";
-
 	@BeforeClass
 	public static void setup() throws IOException, InterruptedException {
-		System.out.println("insetup");
 		Map<String,String> env = readEnvs();
 		baseUrl = baseUrl + env.get("PORT");
 		waitForServerStartup();
@@ -95,24 +85,25 @@ public class ShoppingListIT {
 	}
 
 	@Test
-	public void testCreateShoppingList() throws OAuthSystemException, OAuthProblemException, UnsupportedEncodingException {
+	public void testCreateShoppingList() throws OAuthSystemException, OAuthProblemException, IOException {
 
 		// establish oauth token
+		Map<String, String> p = readEnvs();
 
 		/* the Apache Oltu library seems to be completely unusable/broken!
 		 * look at this below code! it's totally not intuitive!
+		 * Even a bug was submitted but was resolved: https://issues.apache.org/jira/browse/OLTU-159
+		 * But the comment about the abilities doesn't meet the RFC!
 		 */
-		String idSecret = clientId + ':' + clientSecret;
-		String bearer = Base64.getEncoder().encodeToString(idSecret.getBytes("UTF-8"));
+		String idSecret = p.get("clientId") + ':' + p.get("clientSecret");
+		String basicAuth = Base64.getEncoder().encodeToString(idSecret.getBytes("UTF-8"));
 		OAuthClientRequest request = OAuthClientRequest.tokenLocation(baseUrl + tokenEndpoint)
-				.setParameter("key-doesnt-matter", bearer)
-				.buildHeaderMessage();
-		OAuthClientRequest r2 = OAuthClientRequest.tokenLocation(baseUrl + tokenEndpoint)
 				.setGrantType(GrantType.PASSWORD)
-				.setUsername(username)
-				.setPassword(password)
+				.setUsername(p.get("userName"))
+				.setPassword(p.get("userPass"))
 				.buildBodyMessage();
-		request.setBody(r2.getBody());
+		request.setHeader("Authorization", "Basic " + basicAuth);
+		request.setHeader("X-Forwarded-Proto", "https");
 
 		OAuthClient oAuthClient = new OAuthClient(new URLConnectionClient());
 
@@ -120,10 +111,7 @@ public class ShoppingListIT {
 
 		OAuthToken oauthToken = accessTokenResp.getOAuthToken();
 
-		OAuthClientRequest bearerClientRequest = new OAuthBearerClientRequest(baseUrl + shoppingListEndpoint).setAccessToken(oauthToken.getAccessToken()).buildQueryMessage();
-//		bearerClientRequest.
-
-//		oAuthClient.resource(bearerClientRequest, requestMethod, responseClass)
+		OAuthClientRequest bearerClientRequest = new OAuthBearerClientRequest(baseUrl + shoppingListEndpoint).setAccessToken(oauthToken.getAccessToken()).buildHeaderMessage();
 		OAuthResourceResponse resourceResponse = oAuthClient.resource(bearerClientRequest, OAuth.HttpMethod.GET, OAuthResourceResponse.class);
 	}
 }

@@ -66,7 +66,7 @@ public class AccessToken {
 			@Context HttpServletRequest request
 	) {
 		// ensure TLS or in bluemix environment that "x-forwarded-proto" is https
-		if(!(request.isSecure() || "https".equals(request.getHeader("x-forwarded-proto")))) {
+		if(!(request.isSecure() || "https".equals(request.getHeader("X-Forwarded-Proto")))) {
 			ErrorResponse errorMsg = new ErrorResponse(ErrorType.INVALID_REQUEST);
 			return Response.status(Response.Status.BAD_REQUEST).entity(errorMsg).build();
 		}
