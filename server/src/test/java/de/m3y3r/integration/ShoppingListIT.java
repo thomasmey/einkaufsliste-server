@@ -2,7 +2,6 @@ package de.m3y3r.integration;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.net.ConnectException;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -23,8 +22,13 @@ import org.apache.oltu.oauth2.common.exception.OAuthProblemException;
 import org.apache.oltu.oauth2.common.exception.OAuthSystemException;
 import org.apache.oltu.oauth2.common.message.types.GrantType;
 import org.apache.oltu.oauth2.common.token.OAuthToken;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import de.m3y3r.ekl.api.model.ShoppingListGet;
 
 public class ShoppingListIT {
 
@@ -39,11 +43,14 @@ public class ShoppingListIT {
 	// oauth
 	private String tokenEndpoint =  "/oauth/token";
 
+	private static ObjectMapper objectMapper;
+
 	@BeforeClass
 	public static void setup() throws IOException, InterruptedException {
 		Map<String,String> env = readEnvs();
 		baseUrl = baseUrl + env.get("PORT");
 		waitForServerStartup();
+		objectMapper = new ObjectMapper();
 	}
 
 	private static void waitForServerStartup() throws IOException, InterruptedException {
@@ -113,5 +120,9 @@ public class ShoppingListIT {
 
 		OAuthClientRequest bearerClientRequest = new OAuthBearerClientRequest(baseUrl + shoppingListEndpoint).setAccessToken(oauthToken.getAccessToken()).buildHeaderMessage();
 		OAuthResourceResponse resourceResponse = oAuthClient.resource(bearerClientRequest, OAuth.HttpMethod.GET, OAuthResourceResponse.class);
+		ShoppingListGet[] shoppingLists = objectMapper.readValue(resourceResponse.getBody(), ShoppingListGet[].class);
+
+		// no exception hit, everything seems to be okay!
+		Assert.assertTrue(true);
 	}
 }
