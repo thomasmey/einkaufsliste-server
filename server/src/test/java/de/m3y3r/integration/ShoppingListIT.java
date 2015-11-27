@@ -2,31 +2,24 @@ package de.m3y3r.integration;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.ConnectException;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.net.URLConnection;
-import java.util.Base64;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.oltu.oauth2.client.OAuthClient;
-import org.apache.oltu.oauth2.client.URLConnectionClient;
-import org.apache.oltu.oauth2.client.request.OAuthBearerClientRequest;
-import org.apache.oltu.oauth2.client.request.OAuthClientRequest;
-import org.apache.oltu.oauth2.client.response.OAuthJSONAccessTokenResponse;
-import org.apache.oltu.oauth2.client.response.OAuthResourceResponse;
-import org.apache.oltu.oauth2.common.OAuth;
-import org.apache.oltu.oauth2.common.exception.OAuthProblemException;
-import org.apache.oltu.oauth2.common.exception.OAuthSystemException;
-import org.apache.oltu.oauth2.common.message.types.GrantType;
-import org.apache.oltu.oauth2.common.token.OAuthToken;
+import javax.ws.rs.ProcessingException;
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.Form;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+
+import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
+import org.glassfish.jersey.client.oauth2.OAuth2ClientSupport;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.m3y3r.ekl.api.model.ShoppingListGet;
 
@@ -36,41 +29,37 @@ public class ShoppingListIT {
 
 	private static String baseUrl = "http://localhost:";
 
-	// api
-	private static String pingEndpoint = "/ekl/buildinfo";
-	private String shoppingListEndpoint = "/ekl/list";
-
 	// oauth
-	private String tokenEndpoint =  "/oauth/token";
+	private final String tokenEndpoint = "/token";
 
-	private static ObjectMapper objectMapper;
+	//api
+	private static final String buildEndpoint = "/buildinfo";
 
 	@BeforeClass
 	public static void setup() throws IOException, InterruptedException {
 		Map<String,String> env = readEnvs();
 		baseUrl = baseUrl + env.get("PORT");
 		waitForServerStartup();
-		objectMapper = new ObjectMapper();
 	}
 
 	private static void waitForServerStartup() throws IOException, InterruptedException {
 		long maxWaitTime = System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(2);
-		URL url = new URL(baseUrl + pingEndpoint);
-		System.out.println("url=" + url);
+
+		Client client = ClientBuilder.newClient();
+		WebTarget target = client.target(baseUrl + "/ekl");
+		WebTarget path = target.path(buildEndpoint);
 
 		boolean okay = false;
 		System.out.println("waiting for server: ");
 		while(System.currentTimeMillis() < maxWaitTime) {
 			try {
-				URLConnection uc = url.openConnection();
-				HttpURLConnection huc = (HttpURLConnection) uc;
-				int responseCode = huc.getResponseCode();
-				if(responseCode == 200) {
+				Response response = path.request(MediaType.APPLICATION_JSON).get();
+				if(response.getStatus() == 200) {
 					okay = true;
 					break;
 				}
-			} catch(ConnectException e) {
-//				System.err.println(e);
+			} catch(ProcessingException e) {
+				System.err.println(e);
 			}
 			Thread.sleep(TimeUnit.SECONDS.toMillis(1));
 			System.out.print(".");
@@ -92,35 +81,22 @@ public class ShoppingListIT {
 	}
 
 	@Test
-	public void testCreateShoppingList() throws OAuthSystemException, OAuthProblemException, IOException {
+	public void testCreateShoppingList() throws IOException {
+
+		Client client = ClientBuilder.newClient();
+		WebTarget targetOauth = client.target(baseUrl + "/oauth");
 
 		// establish oauth token
 		Map<String, String> p = readEnvs();
 
-		/* the Apache Oltu library seems to be completely unusable/broken!
-		 * look at this below code! it's totally not intuitive!
-		 * Even a bug was submitted but was resolved: https://issues.apache.org/jira/browse/OLTU-159
-		 * But the comment about the abilities doesn't meet the RFC!
-		 */
-		String idSecret = p.get("clientId") + ':' + p.get("clientSecret");
-		String basicAuth = Base64.getEncoder().encodeToString(idSecret.getBytes("UTF-8"));
-		OAuthClientRequest request = OAuthClientRequest.tokenLocation(baseUrl + tokenEndpoint)
-				.setGrantType(GrantType.PASSWORD)
-				.setUsername(p.get("userName"))
-				.setPassword(p.get("userPass"))
-				.buildBodyMessage();
-		request.setHeader("Authorization", "Basic " + basicAuth);
-		request.setHeader("X-Forwarded-Proto", "https");
+		HttpAuthenticationFeature basicAuthFeature = HttpAuthenticationFeature.basic(p.get("clientId"), p.get("clientSecret"));
+		WebTarget tokenEndpoint = targetOauth.path(this.tokenEndpoint).register(basicAuthFeature);
 
-		OAuthClient oAuthClient = new OAuthClient(new URLConnectionClient());
-
-		OAuthJSONAccessTokenResponse accessTokenResp = oAuthClient.accessToken(request);
-
-		OAuthToken oauthToken = accessTokenResp.getOAuthToken();
-
-		OAuthClientRequest bearerClientRequest = new OAuthBearerClientRequest(baseUrl + shoppingListEndpoint).setAccessToken(oauthToken.getAccessToken()).buildHeaderMessage();
-		OAuthResourceResponse resourceResponse = oAuthClient.resource(bearerClientRequest, OAuth.HttpMethod.GET, OAuthResourceResponse.class);
-		ShoppingListGet[] shoppingLists = objectMapper.readValue(resourceResponse.getBody(), ShoppingListGet[].class);
+		Form form = new Form();
+		form.param("grant_type", "password");
+		form.param("username", p.get("userName"));
+		form.param("password", p.get("userPass"));
+		Response tokenResponse = tokenEndpoint.request().post(Entity.form(form));
 
 		// no exception hit, everything seems to be okay!
 		Assert.assertTrue(true);

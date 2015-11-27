@@ -10,11 +10,9 @@
 
 	<groupId>de.m3y3r</groupId>
 	<artifactId>einkaufsliste-server-server</artifactId>
-	<version>0.1.0-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
 	<name>einkaufsliste-server Server</name>
-	<url>https://github.com/thomasmey/einkaufsliste-server</url>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -37,7 +35,7 @@
 		<dependency>
 			<groupId>de.m3y3r</groupId>
 			<artifactId>einkaufsliste-server-model</artifactId>
-			<version>0.1.0-SNAPSHOT</version>
+			<version>${project.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.wildfly.swarm</groupId>
@@ -102,10 +100,14 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
-			<groupId>org.apache.oltu.oauth2</groupId>
-			<artifactId>org.apache.oltu.oauth2.client</artifactId>
-			<version>${oltu.version}</version>
-			<scope>test</scope>
+			<groupId>org.glassfish.jersey.core</groupId>
+			<artifactId>jersey-client</artifactId>
+			<version>${jersey.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.glassfish.jersey.security</groupId>
+			<artifactId>oauth2-client</artifactId>
+			<version>${jersey.version}</version>
 		</dependency>
 	</dependencies>
 
@@ -145,7 +147,6 @@
 			<plugin>
 				<groupId>org.wildfly.swarm</groupId>
 				<artifactId>wildfly-swarm-plugin</artifactId>
-				<version>${wildfly-swarm-plugin.version}</version>
 				<configuration>
 					<mainClass>de.m3y3r.cloud.App</mainClass>
 				</configuration>
@@ -217,9 +218,4 @@
 			</plugin>
 		</plugins>
 	</build>
-	<scm>
-		<url>https://github.com/thomasmey/einkaufsliste-server</url>
-		<connection>scm:git:file://.</connection>
-		<developerConnection>scm:git:file://.</developerConnection>
-	</scm>
 </project>

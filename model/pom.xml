@@ -10,10 +10,8 @@
 
 	<groupId>de.m3y3r</groupId>
 	<artifactId>einkaufsliste-server-model</artifactId>
-	<version>0.1.0-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
 	<name>einkaufsliste-server API model</name>
-	<url>https://github.com/thomasmey/einkaufsliste-server</url>
 
 </project>
