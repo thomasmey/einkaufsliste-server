@@ -18,7 +18,6 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<jetty.version>9.3.3.v20150827</jetty.version>
 		<postgres.version>9.4-1204-jdbc42</postgres.version>
-		<jersey.version>2.22.1</jersey.version>
 		<hibernate.validator.version>5.2.2.Final</hibernate.validator.version>
 		<hibernate.jpa.version>5.0.2.Final</hibernate.jpa.version>
 		<junit.version>4.12</junit.version>
@@ -28,6 +27,8 @@
 		<json-p.version>1.0.4</json-p.version>
 		<!-- should match the libraries used by the wildfly-swarm modules -->
 		<jackson.version>2.5.4</jackson.version>
+		<resteasy.version>3.0.13.Final</resteasy.version>
+		<!-- should match the libraries used by the wildfly-swarm modules -->
 		<oltu.version>1.0.1</oltu.version>
 	</properties>
 
@@ -100,14 +101,22 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
-			<groupId>org.glassfish.jersey.core</groupId>
-			<artifactId>jersey-client</artifactId>
-			<version>${jersey.version}</version>
+			<groupId>org.jboss.resteasy</groupId>
+			<artifactId>resteasy-client</artifactId>
+			<version>${resteasy.version}</version>
+			<scope>test</scope>
 		</dependency>
 		<dependency>
-			<groupId>org.glassfish.jersey.security</groupId>
-			<artifactId>oauth2-client</artifactId>
-			<version>${jersey.version}</version>
+			<groupId>org.jboss.resteasy</groupId>
+			<artifactId>resteasy-jaxb-provider</artifactId>
+			<version>${resteasy.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.httpcomponents</groupId>
+			<artifactId>httpclient</artifactId>
+			<version>4.3.1</version>
+			<scope>test</scope>
 		</dependency>
 	</dependencies>
 
@@ -165,6 +174,7 @@
 						</goals>
 						<configuration>
 							<environmentFile>${project.build.testResources[0].directory}/integration-test-env.properties</environmentFile>
+							<!-- debug>8701</debug -->
 						</configuration>
 					</execution>
 					<execution>

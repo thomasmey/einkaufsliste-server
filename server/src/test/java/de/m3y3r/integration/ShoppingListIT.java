@@ -15,13 +15,13 @@ import javax.ws.rs.core.Form;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
-import org.glassfish.jersey.client.oauth2.OAuth2ClientSupport;
+import org.jboss.resteasy.client.jaxrs.BasicAuthentication;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import de.m3y3r.ekl.api.model.ShoppingListGet;
+import de.m3y3r.oauth.authserver.TokenResponse;
 
 public class ShoppingListIT {
 
@@ -30,10 +30,12 @@ public class ShoppingListIT {
 	private static String baseUrl = "http://localhost:";
 
 	// oauth
-	private final String tokenEndpoint = "/token";
-
+	private static final String ENDPOINT_TOKEN = "/token";
 	//api
 	private static final String buildEndpoint = "/buildinfo";
+
+	private static final String appPathOauth = "/oauth";
+	private static final String appPathEkl = "/ekl";
 
 	@BeforeClass
 	public static void setup() throws IOException, InterruptedException {
@@ -46,7 +48,7 @@ public class ShoppingListIT {
 		long maxWaitTime = System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(2);
 
 		Client client = ClientBuilder.newClient();
-		WebTarget target = client.target(baseUrl + "/ekl");
+		WebTarget target = client.target(baseUrl + appPathEkl);
 		WebTarget path = target.path(buildEndpoint);
 
 		boolean okay = false;
@@ -84,19 +86,24 @@ public class ShoppingListIT {
 	public void testCreateShoppingList() throws IOException {
 
 		Client client = ClientBuilder.newClient();
-		WebTarget targetOauth = client.target(baseUrl + "/oauth");
+//		client.register(arg0)
+		WebTarget targetOauth = client.target(baseUrl + appPathOauth);
 
 		// establish oauth token
 		Map<String, String> p = readEnvs();
 
-		HttpAuthenticationFeature basicAuthFeature = HttpAuthenticationFeature.basic(p.get("clientId"), p.get("clientSecret"));
-		WebTarget tokenEndpoint = targetOauth.path(this.tokenEndpoint).register(basicAuthFeature);
+		BasicAuthentication basicAuthFeature = new BasicAuthentication(p.get("clientId"), p.get("clientSecret"));
+		WebTarget tokenEndpoint = targetOauth.path(ENDPOINT_TOKEN).register(basicAuthFeature);
 
 		Form form = new Form();
 		form.param("grant_type", "password");
 		form.param("username", p.get("userName"));
 		form.param("password", p.get("userPass"));
-		Response tokenResponse = tokenEndpoint.request().post(Entity.form(form));
+		Response response = tokenEndpoint.request().header("X-Forwarded-Proto", "https").post(Entity.form(form));
+		Object entity = response.readEntity(TokenResponse.class);
+
+		System.out.println("token response=" + response);
+//		System.out.println("accessToken=" + reesponse.getAccesToken());
 
 		// no exception hit, everything seems to be okay!
 		Assert.assertTrue(true);
