@@ -1,5 +1,8 @@
 package de.m3y3r.ekl.api.model;
 
+import javax.xml.bind.annotation.XmlRootElement;
+
+@XmlRootElement
 public class ShoppingListGet {
 
 	private String id;

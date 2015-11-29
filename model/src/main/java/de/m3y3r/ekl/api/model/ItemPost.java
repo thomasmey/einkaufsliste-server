@@ -2,6 +2,9 @@ package de.m3y3r.ekl.api.model;
 
 import java.math.BigDecimal;
 
+import javax.xml.bind.annotation.XmlRootElement;
+
+@XmlRootElement
 public class ItemPost {
 
 	private String name;

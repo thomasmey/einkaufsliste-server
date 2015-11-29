@@ -7,12 +7,13 @@ import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 
 @Entity
+@SequenceGenerator(initialValue = 100, name="ItemSeqGen", sequenceName="seq_item")
 public class Item implements Serializable {
 
 	private static final long serialVersionUID = 1L;
 
 	@Id
-	@GeneratedValue(strategy=GenerationType.SEQUENCE)
+	@GeneratedValue(generator="ItemSeqGen")
 	private Integer id;
 
 	@Column(nullable=false)

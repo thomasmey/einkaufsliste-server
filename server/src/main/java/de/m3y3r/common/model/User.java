@@ -46,40 +46,52 @@ public class User implements Serializable {
 	public Integer getId() {
 		return id;
 	}
-
 	public void setId(Integer id) {
 		this.id = id;
 	}
-
 	public String getUsername() {
 		return username;
 	}
-
 	public void setUsername(String username) {
 		this.username = username;
 	}
-
 	public byte[] getHashedPassword() {
 		return hashedPassword;
 	}
-
 	public void setHashedPassword(byte[] hashedPassword) {
 		this.hashedPassword = hashedPassword;
 	}
-
 	public byte[] getSalt() {
 		return salt;
 	}
-
 	public void setSalt(byte[] salt) {
 		this.salt = salt;
 	}
-
 	public boolean isActive() {
 		return active;
 	}
-
 	public void setActive(boolean active) {
 		this.active = active;
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((getUsername() == null) ? 0 : getUsername().hashCode());
+		return result;
+	}
+	@Override
+	public boolean equals(Object obj) {
+		if (!(obj instanceof User))
+			return false;
+
+		User other = (User) obj;
+		if (getUsername() == null) {
+			if (other.getUsername() != null)
+				return false;
+		} else if (!getUsername().equals(other.getUsername()))
+			return false;
+		return true;
 	}
 }

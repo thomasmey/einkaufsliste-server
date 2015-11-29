@@ -100,11 +100,14 @@ public class AccessToken {
 
 		// does an still valid token exists for the combination clientId/username?
 		String clientId = null;
-		Token token = tokenManager.getToken(clientId, username);
-		if(token == null) {
-			token = tokenManager.newToken(clientId, username);
-			token.getContext().setUser(user);
-		}
+		Token token;
+//		synchronized (tokenManager) {
+			token = tokenManager.getToken(clientId, username);
+			if(token == null) {
+				token = tokenManager.newToken(clientId, username);
+				token.getContext().setUser(user);
+			}
+//		}
 		assert user.getUsername().equals(token.getContext().getUser().getUsername());
 
 		// convert into TokenResponse

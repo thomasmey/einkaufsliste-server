@@ -7,6 +7,7 @@ import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
 import javax.servlet.http.HttpServletRequest;
+import javax.transaction.Transactional;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -59,6 +60,7 @@ public class ShoppingList {
 		return eklMapper.map(eklen);
 	}
 
+	@Transactional
 	@POST
 	@Consumes(MediaType.APPLICATION_JSON)
 	public ResourceId create(ShoppingListPost ekl) {
@@ -67,6 +69,7 @@ public class ShoppingList {
 
 	@GET
 	@Path("{id}")
+	@Produces(MediaType.APPLICATION_JSON)
 	public ShoppingListGet getList(
 			@PathParam("id") @NotNull String uuid,
 			@Context HttpServletRequest request) throws NotAuthorisedException {
@@ -81,8 +84,11 @@ public class ShoppingList {
 		return eklMapper.map(ekl);
 	}
 
+	@Transactional
 	@POST
 	@Path("{id}/item")
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
 	public ResourceId addItem(
 			@NotNull ItemPost itemPost,
 			@PathParam("id") @NotNull String uuidEkl,
@@ -102,10 +108,10 @@ public class ShoppingList {
 		em.persist(item);
 		em.flush();
 		IdMapping idm = new IdMapping();
-		idm.setId(item.getId());
 		UUID uuidItem = UUID.randomUUID();
 		idm.setIdExtern(uuidItem);
-		idm.setObjectName(IdMapping.ON_EKL);
+		idm.setIdIntern(item.getId());
+		idm.setObjectName(IdMapping.ON_ITEM);
 		em.persist(idm);
 
 		return new ResourceId(uuidItem);

@@ -9,6 +9,8 @@ public class ResourceId {
 
 	private UUID id;
 
+	public ResourceId() {}
+
 	public ResourceId(UUID uuidItem) {
 		setId(uuidItem);
 	}
