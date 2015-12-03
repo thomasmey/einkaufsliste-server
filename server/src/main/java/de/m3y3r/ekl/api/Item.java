@@ -7,7 +7,9 @@ import javax.ws.rs.Path;
 import javax.ws.rs.core.MediaType;
 
 import de.m3y3r.ekl.api.model.ItemPut;
+import de.m3y3r.ekl.filter.NoBearerTokenNeeded;
 
+@NoBearerTokenNeeded
 @Path("item")
 public class Item {
 

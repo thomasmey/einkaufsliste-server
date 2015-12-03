@@ -6,6 +6,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
@@ -22,6 +24,7 @@ import javax.ws.rs.core.Response;
 
 import de.m3y3r.common.model.User;
 import de.m3y3r.common.service.UserManager;
+import de.m3y3r.ekl.filter.NoBearerTokenNeeded;
 import de.m3y3r.oauth.authserver.ErrorResponse;
 import de.m3y3r.oauth.authserver.OauthClientManager;
 import de.m3y3r.oauth.authserver.TokenManager;
@@ -42,6 +45,11 @@ public class AccessToken {
 
 	private Charset iso8859 = Charset.forName("ISO-8859-1");
 	private Charset utf8 = Charset.forName("UTF-8");
+	private Logger log;
+
+	public AccessToken() {
+		log = Logger.getLogger(AccessToken.class.getName());
+	}
 
 	@Inject
 	OauthClientManager oauthClientManager;
@@ -57,6 +65,7 @@ public class AccessToken {
 
 	@POST
 	@Produces(MediaType.APPLICATION_JSON)
+	@NoBearerTokenNeeded
 	public Response getToken(
 			@NotNull @FormParam("grant_type") String grantType,
 			@NotNull @FormParam("username") String username,
@@ -65,6 +74,8 @@ public class AccessToken {
 			@NotNull @HeaderParam("Authorization") String clientAuthorization,
 			@Context HttpServletRequest request
 	) {
+		log.log(Level.FINE, "entry");
+
 		// ensure TLS or in bluemix environment that "x-forwarded-proto" is https
 		if(!(request.isSecure() || "https".equals(request.getHeader("X-Forwarded-Proto")))) {
 			ErrorResponse errorMsg = new ErrorResponse(ErrorType.INVALID_REQUEST);
@@ -77,7 +88,8 @@ public class AccessToken {
 		}
 
 		// require client authentication for confidential clients and authenticate it
-		if(!isClientOkay(clientAuthorization)) {
+		Object[] clientIdSecret = parseBasicAuthHeader(clientAuthorization);
+		if(!isClientOkay(clientIdSecret)) {
 			ErrorResponse errorMsg = new ErrorResponse(ErrorType.INVALID_CLIENT);
 			return Response.status(Response.Status.BAD_REQUEST).entity(errorMsg).build();
 		}
@@ -99,15 +111,12 @@ public class AccessToken {
 		// everything seems to be okay, create token for request
 
 		// does an still valid token exists for the combination clientId/username?
-		String clientId = null;
-		Token token;
-//		synchronized (tokenManager) {
-			token = tokenManager.getToken(clientId, username);
-			if(token == null) {
-				token = tokenManager.newToken(clientId, username);
-				token.getContext().setUser(user);
-			}
-//		}
+		String clientId = (String) clientIdSecret[0];
+		Token token = tokenManager.getToken(clientId, username);
+		if(token == null) {
+			token = tokenManager.newToken(clientId, username);
+			token.getContext().setUser(user);
+		}
 		assert user.getUsername().equals(token.getContext().getUser().getUsername());
 
 		// convert into TokenResponse
@@ -131,21 +140,16 @@ public class AccessToken {
 		return Response.ok(tokenMsg).cacheControl(cacheControl).build();
 	}
 
-	/**
-	 * FIXME: check if this can be done via @Context SecurityContext
-	 * @param clientAuthorization
-	 * @return
-	 */
-	private boolean isClientOkay(String clientAuthorization) {
+	private Object[] parseBasicAuthHeader(String clientAuthorization) {
 
 		String prefix = "Basic ";
 		if(!clientAuthorization.startsWith(prefix)) {
-			return false;
+			return null;
 		}
 
 		byte[] decodedClientAuth = Base64.getDecoder().decode(clientAuthorization.substring(prefix.length()));
 
-		// username must not include ':', RFC2617
+		// username must not include ':' -> RFC2617
 		int iSep = -1;
 		final int n = decodedClientAuth.length;
 		for(int i = 0; i < n; i++) {
@@ -155,7 +159,7 @@ public class AccessToken {
 			}
 		}
 		if(iSep < 0) {
-			return false;
+			return null;
 		}
 
 		// RFC2617, RFC2616, http://stackoverflow.com/a/9056877
@@ -163,10 +167,25 @@ public class AccessToken {
 
 		if(iSep + 1 >= n) {
 			//no password after usename!
-			return false;
+			return null;
 		}
 		byte[] clientSecret = Arrays.copyOfRange(decodedClientAuth, iSep + 1, n);
-		OauthClient client = oauthClientManager.getClientByClientId(clientId);
+
+		return new Object[] {clientId, clientSecret};
+	}
+
+	/**
+	 * FIXME: check if this can be done via @Context SecurityContext
+	 * @param clientAuthorization
+	 * @return
+	 */
+	private boolean isClientOkay(Object[] clientIdSecret) {
+
+		if(clientIdSecret == null)
+			return false;
+
+		byte[] clientSecret = (byte[]) clientIdSecret[1];
+		OauthClient client = oauthClientManager.getClientByClientId((String) clientIdSecret[0]);
 		if(client == null)
 			return false;
 		if(!client.isActive())

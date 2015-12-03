@@ -12,8 +12,9 @@ import javax.ws.rs.core.MediaType;
 import de.m3y3r.ekl.api.model.ShoppingListGet;
 import de.m3y3r.ekl.api.model.ShoppingListPost;
 import de.m3y3r.ekl.api.model.ShoppingTourPost;
+import de.m3y3r.ekl.filter.NoBearerTokenNeeded;
 
-@Path(value = "tour")
+@Path("tour")
 public class ShoppingTour {
 
 	@GET

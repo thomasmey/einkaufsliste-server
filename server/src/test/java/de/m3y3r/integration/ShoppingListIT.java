@@ -8,7 +8,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
-import javax.ws.rs.ProcessingException;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.ClientRequestContext;
@@ -19,6 +18,7 @@ import javax.ws.rs.core.Form;
 import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
 
 import org.jboss.resteasy.client.jaxrs.BasicAuthentication;
 import org.junit.Assert;
@@ -38,40 +38,44 @@ public class ShoppingListIT {
 	private static String baseUrl = "http://localhost:";
 
 	// oauth
-	private static final String ENDPOINT_TOKEN = "/token";
+	private static final String ENDPOINT_TOKEN = "token";
 
 	//api
-	private static final String buildEndpoint = "/buildinfo";
-	private static final String ENDPOINT_LIST = "/list";
+	private static final String ENDPOINT_READY = "ready";
+	private static final String ENDPOINT_LIST = "list";
 
-	private static final String appPathOauth = "/oauth";
-	private static final String appPathEkl = "/ekl";
+	private static final String appPathOauth = "oauth";
+	private static final String appPathEkl = "ekl";
 
 	@BeforeClass
 	public static void setup() throws IOException, InterruptedException {
 		Map<String,String> env = readEnvs();
 		baseUrl = baseUrl + env.get("PORT");
-		waitForServerStartup();
-	}
-
-	private static void waitForServerStartup() throws IOException, InterruptedException {
-		long maxWaitTime = System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(2);
 
 		Client client = ClientBuilder.newClient();
-		WebTarget target = client.target(baseUrl + appPathEkl);
-		WebTarget path = target.path(buildEndpoint);
+		WebTarget target = client.target(baseUrl);
+		WebTarget path = target.path(appPathEkl).path(ENDPOINT_READY);
+		waitForServerStartup(path);
+
+		path = target.path(appPathOauth).path(ENDPOINT_READY);
+		waitForServerStartup(path);
+	}
+
+	private static void waitForServerStartup(WebTarget path) throws IOException, InterruptedException {
+		System.out.println("wait for path="+path.getUri());
+		long maxWaitTime = System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(2);
 
 		boolean okay = false;
 		System.out.println("waiting for server: ");
 		while(System.currentTimeMillis() < maxWaitTime) {
-			try {
-				Response response = path.request(MediaType.APPLICATION_JSON).get();
-				if(response.getStatus() == 200) {
-					okay = true;
-					break;
-				}
-			} catch(ProcessingException e) {
-				System.err.println(e);
+			Response response = path.request().get();
+			int s = response.getStatus();
+			response.close();
+
+			System.out.println("response: " + s);
+			if(s == Status.OK.getStatusCode()) {
+				okay = true;
+				break;
 			}
 			Thread.sleep(TimeUnit.SECONDS.toMillis(1));
 			System.out.print(".");
@@ -95,7 +99,7 @@ public class ShoppingListIT {
 	static TokenResponse getToken() throws IOException {
 		Client client = ClientBuilder.newClient();
 
-		WebTarget targetOauth = client.target(baseUrl + appPathOauth);
+		WebTarget targetOauth = client.target(baseUrl).path(appPathOauth);
 
 		// establish oauth token
 		Map<String, String> p = readEnvs();
@@ -121,7 +125,7 @@ public class ShoppingListIT {
 
 		Client client = ClientBuilder.newClient();
 		BearerToken bearerToken = new BearerToken();
-		WebTarget targetApp = client.target(baseUrl + appPathEkl).register(bearerToken);
+		WebTarget targetApp = client.target(baseUrl).path(appPathEkl).register(bearerToken);
 		WebTarget listEndpoint = targetApp.path(ENDPOINT_LIST);
 
 		List<ShoppingListGet> list = listEndpoint.request().accept(MediaType.APPLICATION_JSON).get(new GenericType<List<ShoppingListGet>>() {});
@@ -135,7 +139,7 @@ public class ShoppingListIT {
 
 		Client client = ClientBuilder.newClient();
 		BearerToken bearerToken = new BearerToken();
-		WebTarget targetApp = client.target(baseUrl + appPathEkl).register(bearerToken);
+		WebTarget targetApp = client.target(baseUrl).path(appPathEkl).register(bearerToken);
 		WebTarget listEndpoint = targetApp.path(ENDPOINT_LIST);
 
 		ShoppingListPost sl = new ShoppingListPost();
@@ -150,7 +154,7 @@ public class ShoppingListIT {
 
 		Client client = ClientBuilder.newClient();
 		BearerToken bearerToken = new BearerToken();
-		WebTarget targetApp = client.target(baseUrl + appPathEkl).register(bearerToken);
+		WebTarget targetApp = client.target(baseUrl).path(appPathEkl).register(bearerToken);
 		WebTarget listEndpoint = targetApp.path(ENDPOINT_LIST);
 
 		List<ShoppingListGet> list = listEndpoint.request().accept(MediaType.APPLICATION_JSON).get(new GenericType<List<ShoppingListGet>>() {});

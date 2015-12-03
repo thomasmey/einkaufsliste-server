@@ -13,10 +13,13 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
+import de.m3y3r.ekl.filter.NoBearerTokenNeeded;
+
 @Path("buildinfo")
 public class BuildInfo {
 
 	@GET
+	@NoBearerTokenNeeded
 	@Produces(MediaType.APPLICATION_JSON)
 	public JsonObject getBuildInfo() throws IOException {
 		InputStream inStream = this.getClass().getResourceAsStream("/build.properties");

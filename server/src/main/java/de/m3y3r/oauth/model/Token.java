@@ -9,20 +9,20 @@ public class Token {
 
 	private final UUID id;
 	private final Date entryTs;
-	private int validInSeconds;
+	private final int validInSeconds;
+	private final String externalKey;
 	private Context context;
 
-	public Token() {
+	public Token(String externalKey) {
+		this(3600, externalKey);
+	}
+	public Token(int validSeconds, String externalKey) {
 		this.context = new Context();
 		this.entryTs = new Date();
 		this.id = UUID.randomUUID();
-		this.validInSeconds = 3600;
-	}
-	public Token(int validSeconds) {
-		this();
 		this.validInSeconds = validSeconds;
+		this.externalKey = externalKey;
 	}
-
 	public UUID getId() {
 		return id;
 	}
@@ -39,5 +39,8 @@ public class Token {
 		Date date = new Date();
 		long diff = (date.getTime() - entryTs.getTime()) / TimeUnit.SECONDS.toMillis(1);
 		return validInSeconds - diff;
+	}
+	public String getExternalKey() {
+		return externalKey;
 	}
 }

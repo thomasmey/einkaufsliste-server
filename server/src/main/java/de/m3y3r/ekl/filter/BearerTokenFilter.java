@@ -4,48 +4,49 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Base64;
 import java.util.UUID;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
+import javax.annotation.Priority;
 import javax.inject.Inject;
-import javax.servlet.Filter;
-import javax.servlet.FilterChain;
-import javax.servlet.FilterConfig;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-import javax.servlet.annotation.WebFilter;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.Priorities;
+import javax.ws.rs.container.ContainerRequestContext;
+import javax.ws.rs.container.ContainerRequestFilter;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+import javax.ws.rs.ext.Provider;
 
 import de.m3y3r.oauth.authserver.TokenManager;
 import de.m3y3r.oauth.model.Token;
 
-@WebFilter("/ekl/*")
-public class BearerTokenFilter implements Filter {
+@Provider
+@Priority(Priorities.AUTHORIZATION)
+public class BearerTokenFilter implements ContainerRequestFilter {
 
 	public static final String REQ_ATTRIB_TOKEN = "token";
+
+	private Logger log;
 
 	@Inject
 	TokenManager tokenManager;
 
-	@Override
-	public void destroy() {
+	public BearerTokenFilter() {
+		log = Logger.getLogger(BearerTokenFilter.class.getName());
 	}
 
 	@Override
-	public void doFilter(ServletRequest sreq, ServletResponse sresp, FilterChain fc)
-			throws IOException, ServletException {
+	public void filter(ContainerRequestContext requestContext) throws IOException {
 
-		HttpServletRequest hreq = (HttpServletRequest) sreq;
-		HttpServletResponse hresp = (HttpServletResponse) sresp;
+		if(log.isLoggable(Level.FINE))
+			log.log(Level.FINE, "Processing request path {0}", requestContext.getUriInfo().getPath());
 
-		if("/buildinfo".equals(hreq.getPathInfo())) {
-			fc.doFilter(sreq, sresp);
+		if(requestContext.getProperty(NoBearerTokenFilter.OKAY_WITH_NO_BEARER_TOKEN) != null)
 			return;
-		}
-		String authHeader = hreq.getHeader("Authorization");
+
+		String authHeader = requestContext.getHeaderString("Authorization");
 		String bearer = "Bearer ";
 		if(authHeader == null || !authHeader.startsWith(bearer)) {
-			hresp.sendError(HttpServletResponse.SC_FORBIDDEN);
+			requestContext.abortWith(Response.status(Status.FORBIDDEN).build());
 			return;
 		}
 
@@ -53,16 +54,20 @@ public class BearerTokenFilter implements Filter {
 		byte[] uuid = Base64.getDecoder().decode(id);
 		ByteBuffer bb = ByteBuffer.wrap(uuid);
 		UUID u = new UUID(bb.getLong(), bb.getLong());
+
+		if(log.isLoggable(Level.FINE))
+			log.log(Level.FINE, "Token UUID {0}", u);
+
 		Token token = tokenManager.getTokenByUuid(u);
 		if(token == null || token.getExpiresIn() <= 0) {
-			hresp.sendError(HttpServletResponse.SC_FORBIDDEN);
+			if(log.isLoggable(Level.FINE))
+				log.log(Level.FINE, "Token with UUID {0} not found!", u);
+
+			requestContext.abortWith(Response.status(Status.FORBIDDEN).build());
 			return;
 		}
-		hreq.setAttribute(REQ_ATTRIB_TOKEN, token);
-		fc.doFilter(sreq, sresp);
-	}
 
-	@Override
-	public void init(FilterConfig fc) throws ServletException {
+		log.log(Level.INFO, "Processing request with token {0}", token.getId());
+		requestContext.setProperty(REQ_ATTRIB_TOKEN, token);
 	}
 }
