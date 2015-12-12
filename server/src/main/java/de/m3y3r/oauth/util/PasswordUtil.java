@@ -23,7 +23,7 @@ public class PasswordUtil {
 			md.update(clientSecret);
 			md.update(salt);
 			byte[] hashedPasswordFromInput = md.digest();
-			log.log(Level.INFO, "hashedPasswordFromInput={0}", Arrays.toString(hashedPasswordFromInput));
+//			log.log(Level.INFO, "hashedPasswordFromInput={0}", Arrays.toString(hashedPasswordFromInput));
 			return Arrays.equals(hashedPassword, hashedPasswordFromInput);
 		} catch (NoSuchAlgorithmException e) {
 			log.log(Level.SEVERE, "WHAT?", e);

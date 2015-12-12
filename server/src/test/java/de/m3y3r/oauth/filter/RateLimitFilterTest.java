@@ -11,7 +11,6 @@ public class RateLimitFilterTest {
 	@Test
 	public void testRateLimitOneIp() throws ServletException, InterruptedException {
 		RateLimitFilter f = new RateLimitFilter();
-		f.init(null);
 
 		long minMillisPerRequest = 10;
 		for(int i = 0, n = 100; i < n; i++) {
@@ -30,7 +29,6 @@ public class RateLimitFilterTest {
 	@Test
 	public void testRateLimitTwoThousandIp() throws ServletException, InterruptedException {
 		RateLimitFilter f = new RateLimitFilter();
-		f.init(null);
 
 		long minMillisPerRequest = 10;
 		int maxIps = 2000; // doesn't fit in limit cache
@@ -50,7 +48,6 @@ public class RateLimitFilterTest {
 	@Test
 	public void testRateLimitOneThousandIp() throws ServletException, InterruptedException {
 		RateLimitFilter f = new RateLimitFilter();
-		f.init(null);
 
 		long minMillisPerRequest = 100;
 		int maxIps = 500; // fits in limit cache
@@ -82,7 +79,6 @@ public class RateLimitFilterTest {
 	@Test
 	public void testRateLimitTwoThousandIp2() throws ServletException, InterruptedException {
 		RateLimitFilter f = new RateLimitFilter();
-		f.init(null);
 
 		long minMillisPerRequest = 100;
 		int maxIps = 2000; // doesn't fit in limit cache

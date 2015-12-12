@@ -46,6 +46,8 @@ public class BearerTokenFilter implements ContainerRequestFilter {
 		String authHeader = requestContext.getHeaderString("Authorization");
 		String bearer = "Bearer ";
 		if(authHeader == null || !authHeader.startsWith(bearer)) {
+			if(log.isLoggable(Level.FINE))
+				log.log(Level.FINE, "Abort because of missing Auth header!");
 			requestContext.abortWith(Response.status(Status.FORBIDDEN).build());
 			return;
 		}
@@ -60,14 +62,16 @@ public class BearerTokenFilter implements ContainerRequestFilter {
 
 		Token token = tokenManager.getTokenByUuid(u);
 		if(token == null || token.getExpiresIn() <= 0) {
-			if(log.isLoggable(Level.FINE))
+			if(log.isLoggable(Level.FINE)) {
 				log.log(Level.FINE, "Token with UUID {0} not found!", u);
-
+				log.log(Level.FINE, "Abort because of missing token!");
+			}
 			requestContext.abortWith(Response.status(Status.FORBIDDEN).build());
 			return;
 		}
 
-		log.log(Level.INFO, "Processing request with token {0}", token.getId());
+		if(log.isLoggable(Level.FINE))
+			log.log(Level.FINE, "Processing request with token {0}", token.getId());
 		requestContext.setProperty(REQ_ATTRIB_TOKEN, token);
 	}
 }

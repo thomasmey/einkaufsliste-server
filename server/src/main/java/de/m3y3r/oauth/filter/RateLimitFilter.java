@@ -4,58 +4,30 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
 import java.util.WeakHashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-import javax.servlet.Filter;
-import javax.servlet.FilterChain;
-import javax.servlet.FilterConfig;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-import javax.servlet.annotation.WebFilter;
-import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.container.ContainerRequestContext;
+import javax.ws.rs.container.ContainerRequestFilter;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+import javax.ws.rs.ext.Provider;
 
-/**
- * According to "Oracle JRockit - The Definitve Guide"
- * WeakHashMap are ideal for caches.
- * @author thomas
- *
- */
-@WebFilter("/oauth/token")
-public class RateLimitFilter implements Filter {
+@Provider
+@RateLimit
+public class RateLimitFilter implements ContainerRequestFilter {
 
 	private static final int MAX_STALE_PERIOD = 5000;
-	private Map<String,Entry> entries;
 	private long minMillisPerRequest = 1000;
+
+	private Logger log;
+	private Map<String,Entry> entries;
 	private volatile long lastInvocation;
 
-	@Override
-	public void destroy() {
-		entries = null;
-	}
-
-	@Override
-	public void doFilter(ServletRequest sreq, ServletResponse sresp, FilterChain fc)
-			throws IOException, ServletException {
-
-		long ts = System.currentTimeMillis();
-		synchronized (entries) {
-			if(lastInvocation > 0 && ts - lastInvocation > MAX_STALE_PERIOD) {
-				entries.clear();
-			}
-			lastInvocation = ts;
-		}
-		String remoteAddr = sreq.getRemoteAddr();
-		Entry e = maintain(remoteAddr, ts);
-
-		long timeDiff = e.currentTs - e.prevTs;
-		long millisPerReq = e.noHits > 0 ? timeDiff : 0;
-		if(e.noHits > 0 && millisPerReq < minMillisPerRequest) {
-			HttpServletResponse hresp = (HttpServletResponse) sresp;
-			hresp.sendError(HttpServletResponse.SC_FORBIDDEN);
-		} else {
-			fc.doFilter(sreq, sresp);
-		}
-	}
+	@Context
+	private HttpServletRequest servletRequest;
 
 	Entry maintain(String ipAddr, long ts) {
 
@@ -75,9 +47,35 @@ public class RateLimitFilter implements Filter {
 		return e;
 	}
 
-	@Override
-	public void init(FilterConfig fc) throws ServletException {
+	public RateLimitFilter() {
+		log = Logger.getLogger(RateLimitFilter.class.getName());
 		entries = Collections.synchronizedMap(new WeakHashMap<>());
+		log.log(Level.INFO, "new rate limit filter");
+	}
+
+	@Override
+	public void filter(ContainerRequestContext requestContext) throws IOException {
+		long ts = System.currentTimeMillis();
+		synchronized (entries) {
+			if(lastInvocation > 0 && ts - lastInvocation > MAX_STALE_PERIOD) {
+				entries.clear();
+			}
+			lastInvocation = ts;
+		}
+		String remoteAddr = servletRequest.getRemoteAddr();
+		Entry e = maintain(remoteAddr, ts);
+
+		long timeDiff = e.currentTs - e.prevTs;
+		long millisPerReq = e.noHits > 0 ? timeDiff : 0;
+		if(e.noHits > 0 && millisPerReq < minMillisPerRequest) {
+			log.log(Level.INFO, "rate limit hit - no hits {2} - was {0}, goal {1}", new Object[] {millisPerReq, minMillisPerRequest, e.noHits});
+			requestContext.abortWith(Response.status(Status.FORBIDDEN).build());
+		}
+	}
+
+	/* FIXME */
+	public static long getMinMillisPerRequest() {
+		return 1000;
 	}
 }
 

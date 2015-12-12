@@ -30,6 +30,7 @@ import de.m3y3r.oauth.authserver.OauthClientManager;
 import de.m3y3r.oauth.authserver.TokenManager;
 import de.m3y3r.oauth.authserver.TokenResponse;
 import de.m3y3r.oauth.authserver.TokenResponse.TokenType;
+import de.m3y3r.oauth.filter.RateLimit;
 import de.m3y3r.oauth.authserver.ErrorResponse.ErrorType;
 import de.m3y3r.oauth.model.OauthClient;
 import de.m3y3r.oauth.model.Token;
@@ -66,6 +67,7 @@ public class AccessToken {
 	@POST
 	@Produces(MediaType.APPLICATION_JSON)
 	@NoBearerTokenNeeded
+	@RateLimit
 	public Response getToken(
 			@NotNull @FormParam("grant_type") String grantType,
 			@NotNull @FormParam("username") String username,
