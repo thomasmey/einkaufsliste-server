@@ -14,24 +14,6 @@
 
 	<name>einkaufsliste-server Server</name>
 
-	<properties>
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<jetty.version>9.3.3.v20150827</jetty.version>
-		<postgres.version>9.4-1204-jdbc42</postgres.version>
-		<hibernate.validator.version>5.2.2.Final</hibernate.validator.version>
-		<hibernate.jpa.version>5.0.2.Final</hibernate.jpa.version>
-		<junit.version>4.12</junit.version>
-		<wildfly-swarm.version>1.0.0.Alpha5</wildfly-swarm.version>
-		<wildfly-swarm-plugin.version>1.0.0.Alpha6-SNAPSHOT</wildfly-swarm-plugin.version>
-		<mapstruct.version>1.0.0.CR2</mapstruct.version>
-		<json-p.version>1.0.4</json-p.version>
-		<!-- should match the libraries used by the wildfly-swarm modules -->
-		<jackson.version>2.5.4</jackson.version>
-		<resteasy.version>3.0.13.Final</resteasy.version>
-		<!-- should match the libraries used by the wildfly-swarm modules -->
-		<oltu.version>1.0.1</oltu.version>
-	</properties>
-
 	<dependencies>
 		<dependency>
 			<groupId>de.m3y3r</groupId>
@@ -125,6 +107,60 @@
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
+
+	<profiles>
+		<profile>
+			<id>deploy</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.cloudfoundry</groupId>
+						<artifactId>cf-maven-plugin</artifactId>
+						<configuration>
+							<server>Bluemix</server>
+							<target>https://api.eu-gb.bluemix.net</target>
+							<appname>${CF_APPNAME}</appname>
+							<org>${CF_ORGNAME}</org>
+							<space>${CF_SPACENAME}</space>
+							<instances>1</instances>
+							<memory>480</memory>
+							<services>
+								<service>
+									<name>postgres</name>
+									<label>elephantsql-1</label>
+									<plan>Shared</plan>
+								</service>
+							</services>
+							<env>
+								<DATASOURCE_MAP>{ "elephantsql-1": "MainDS" }</DATASOURCE_MAP>
+							</env>
+						</configuration>
+						<executions>
+							<execution>
+								<phase>package</phase>
+								<goals>
+									<goal>push</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+					<plugin>
+						<artifactId>maven-clean-plugin</artifactId>
+						<version>2.5</version>
+						<executions>
+							<execution>
+								<id>auto-clean</id>
+								<phase>initialize</phase>
+								<goals>
+									<goal>clean</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
 
 	<build>
 		<plugins>

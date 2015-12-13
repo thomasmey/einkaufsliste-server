@@ -63,6 +63,7 @@ public class RateLimitFilter implements ContainerRequestFilter {
 			lastInvocation = ts;
 		}
 		String remoteAddr = servletRequest.getRemoteAddr();
+		//FIXME: user remoteAddr and target path here!
 		Entry e = maintain(remoteAddr, ts);
 
 		long timeDiff = e.currentTs - e.prevTs;

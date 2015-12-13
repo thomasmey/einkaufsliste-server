@@ -23,9 +23,9 @@ import javax.json.JsonValue.ValueType;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.ClassLoaderAsset;
 import org.wildfly.swarm.config.datasources.DataSource;
+import org.wildfly.swarm.config.datasources.JDBCDriver;
 import org.wildfly.swarm.container.Container;
 import org.wildfly.swarm.datasources.DatasourcesFraction;
-import org.wildfly.swarm.datasources.JDBCDriver;
 import org.wildfly.swarm.jaxrs.JAXRSArchive;
 import org.wildfly.swarm.jpa.JPAFraction;
 
@@ -84,6 +84,7 @@ public class App implements Runnable {
 				}
 				for(String driver: drivers) {
 					JDBCDriver dr = new JDBCDriver(driver);
+					dr.driverName(driver);
 					switch(driver) {
 					case "postgres":
 						dr.driverModuleName("org.postgresql.postgres");
