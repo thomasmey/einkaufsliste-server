@@ -22,7 +22,6 @@
 		<hibernate.jpa.version>5.0.2.Final</hibernate.jpa.version>
 		<junit.version>4.12</junit.version>
 		<wildfly-swarm.version>1.0.0.Alpha6-SNAPSHOT</wildfly-swarm.version>
-		<maven-plugin.wildfly-swarm.version>1.0.0.Alpha6-SNAPSHOT</maven-plugin.wildfly-swarm.version>
 		<mapstruct.version>1.0.0.Final</mapstruct.version>
 		<json-p.version>1.0.4</json-p.version>
 		<!-- should match the libraries used by the wildfly-swarm modules -->
@@ -52,7 +51,7 @@
 				<groupId>org.cloudfoundry</groupId>
 				<artifactId>cf-maven-plugin</artifactId>
 				<version>1.1.0</version>
-			<plugin>
+			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
@@ -71,7 +70,7 @@
 			<plugin>
 				<groupId>org.wildfly.swarm</groupId>
 				<artifactId>wildfly-swarm-plugin</artifactId>
-				<version>${maven-plugin.wildfly-swarm.version}</version>
+				<version>${wildfly-swarm.version}</version>
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
