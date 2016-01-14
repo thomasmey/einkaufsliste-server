@@ -16,28 +16,33 @@
 
 	<dependencies>
 		<dependency>
+			<groupId>org.cloudfoundry</groupId>
+			<artifactId>cloudfoundry-client-lib</artifactId>
+			<version>1.1.2</version>
+		</dependency>
+		<dependency>
 			<groupId>de.m3y3r</groupId>
 			<artifactId>einkaufsliste-server-model</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.wildfly.swarm</groupId>
-			<artifactId>wildfly-swarm-jaxrs-weld</artifactId>
+			<artifactId>jaxrs-weld</artifactId>
 			<version>${wildfly-swarm.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.wildfly.swarm</groupId>
-			<artifactId>wildfly-swarm-bean-validation</artifactId>
+			<artifactId>bean-validation</artifactId>
 			<version>${wildfly-swarm.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.wildfly.swarm</groupId>
-			<artifactId>wildfly-swarm-hibernate-validator</artifactId>
+			<artifactId>hibernate-validator</artifactId>
 			<version>${wildfly-swarm.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.wildfly.swarm</groupId>
-			<artifactId>wildfly-swarm-jpa</artifactId>
+			<artifactId>jpa</artifactId>
 			<version>${wildfly-swarm.version}</version>
 		</dependency>
 		<dependency>
