@@ -63,6 +63,8 @@ public class App implements Runnable {
 
 	public void run() {
 
+		System.out.println("Starting app!");
+
 		/* for environment variables see:
 		 * http://docs.run.pivotal.io/devguide/deploy-apps/environment-variable.html
 		 */
@@ -72,6 +74,8 @@ public class App implements Runnable {
 
 		try {
 			Container container = new Container();
+
+			System.out.println("Adding datasources");
 
 			DatasourcesFraction dsf = new DatasourcesFraction();
 //			dsf.jdbcDriver(childKey, config)
@@ -106,6 +110,8 @@ public class App implements Runnable {
 					.defaultDatasource("jboss/datasources/" + System.getenv(ENV_DS_DEFAULT))
 					);
 
+			System.out.println("Starting container");
+
 			container.start();
 
 			// deploy app
@@ -123,6 +129,8 @@ public class App implements Runnable {
 					new ClassLoaderAsset("build.properties", App.class.getClassLoader()),
 					"classes/build.properties");
 			deployment.addAllDependencies();
+
+			System.out.println("Deploying apps");
 			container.deploy(deployment);
 
 		} catch(Exception e) {
@@ -171,6 +179,23 @@ public class App implements Runnable {
 					String pUri = jsCred.getString("uri");
 
 					String name = dbEntry.getString("name");
+					DataSource ds = pgDataSourceFromUrl(pUri, dsMap.get(name));
+					datasources.put(name, ds);
+				}
+				break;
+
+			case "user-provided":
+				for(JsonValue entry: jaSqldb) {
+					assert entry.getValueType() == ValueType.OBJECT;
+
+					JsonObject dbEntry = (JsonObject) entry;
+					String name = dbEntry.getString("name");
+					if(!name.startsWith("elephantsql"))
+						continue;
+
+					JsonObject jsCred = dbEntry.getJsonObject("credentials");
+					String pUri = jsCred.getString("uri");
+
 					DataSource ds = pgDataSourceFromUrl(pUri, dsMap.get(name));
 					datasources.put(name, ds);
 				}

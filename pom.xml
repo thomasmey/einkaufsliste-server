@@ -21,7 +21,7 @@
 		<hibernate.validator.version>5.2.2.Final</hibernate.validator.version>
 		<hibernate.jpa.version>5.0.2.Final</hibernate.jpa.version>
 		<junit.version>4.12</junit.version>
-		<wildfly-swarm.version>1.0.0.Alpha6-SNAPSHOT</wildfly-swarm.version>
+		<wildfly-swarm.version>1.0.0.Alpha7-SNAPSHOT</wildfly-swarm.version>
 		<mapstruct.version>1.0.0.Final</mapstruct.version>
 		<json-p.version>1.0.4</json-p.version>
 		<!-- should match the libraries used by the wildfly-swarm modules -->
