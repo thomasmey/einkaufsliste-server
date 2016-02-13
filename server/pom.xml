@@ -3,15 +3,15 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<parent>
-		<groupId>de.m3y3r</groupId>
-		<artifactId>einkaufsliste-server</artifactId>
+		<groupId>de.m3y3r.einkaufsliste</groupId>
+		<artifactId>parent</artifactId>
 		<version>0.1.0-SNAPSHOT</version>
 	</parent>
 
-	<artifactId>einkaufsliste-server-server</artifactId>
-	<packaging>jar</packaging>
+	<artifactId>server</artifactId>
+	<packaging>war</packaging>
 
-	<name>einkaufsliste-server Server</name>
+	<name>RESTful server</name>
 
 	<dependencies>
 		<dependency>
@@ -20,66 +20,14 @@
 			<version>${project.version}</version>
 		</dependency>
 		<dependency>
-			<groupId>org.wildfly.swarm</groupId>
-			<artifactId>jaxrs-weld</artifactId>
-			<version>${wildfly-swarm.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>org.wildfly.swarm</groupId>
-			<artifactId>bean-validation</artifactId>
-			<version>${wildfly-swarm.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>org.wildfly.swarm</groupId>
-			<artifactId>hibernate-validator</artifactId>
-			<version>${wildfly-swarm.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>org.wildfly.swarm</groupId>
-			<artifactId>jpa</artifactId>
-			<version>${wildfly-swarm.version}</version>
+			<groupId>javax</groupId>
+			<artifactId>javaee-api</artifactId>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.mapstruct</groupId>
 			<artifactId>mapstruct-jdk8</artifactId>
 			<version>${mapstruct.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>javax.json</groupId>
-			<artifactId>javax.json-api</artifactId>
-			<version>1.0</version>
-		</dependency>
-		<dependency>
-			<groupId>org.glassfish</groupId>
-			<artifactId>javax.json</artifactId>
-			<version>${json-p.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>org.postgresql</groupId>
-			<artifactId>postgresql</artifactId>
-			<version>${postgres.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>com.fasterxml.jackson.core</groupId>
-			<artifactId>jackson-annotations</artifactId>
-			<version>${jackson.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>com.fasterxml.jackson.datatype</groupId>
-			<artifactId>jackson-datatype-jsr353</artifactId>
-			<version>${jackson.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
-			<version>${junit.version}</version>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.hamcrest</groupId>
-			<artifactId>hamcrest-library</artifactId>
-			<version>1.3</version>
-			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.jboss.resteasy</groupId>
@@ -195,37 +143,36 @@
 				</configuration>
 			</plugin>
 			<plugin>
-				<groupId>org.wildfly.swarm</groupId>
-				<artifactId>wildfly-swarm-plugin</artifactId>
-				<configuration>
-					<mainClass>de.m3y3r.cloud.App</mainClass>
-				</configuration>
+				<groupId>net.wasdev.wlp.maven.plugins</groupId>
+				<artifactId>liberty-maven-plugin</artifactId>
 				<executions>
-					<execution>
-						<id>package</id>
-						<goals>
-							<goal>package</goal>
-						</goals>
-					</execution>
 					<execution>
 						<id>start-server</id>
 						<phase>pre-integration-test</phase>
 						<goals>
-							<goal>start</goal>
+							<goal>start-server</goal>
 						</goals>
-						<configuration>
-							<environmentFile>${project.build.testResources[0].directory}/integration-test-env.properties</environmentFile>
-							<!-- debug>8701</debug -->
-						</configuration>
 					</execution>
 					<execution>
 						<id>stop-server</id>
 						<phase>post-integration-test</phase>
 						<goals>
-							<goal>stop</goal>
+							<goal>stop-server</goal>
 						</goals>
+						<configuration>
+							<serverStopTimeout>60</serverStopTimeout>
+						</configuration>
 					</execution>
 				</executions>
+				<configuration>
+					<configFile>${project.build.testOutputDirectory}/wlp/server.xml</configFile>
+					<bootstrapProperties>
+						<httpPort>8080</httpPort>
+					</bootstrapProperties>
+					<jvmOptions>
+						<param>-Xmx512m</param>
+					</jvmOptions>
+				</configuration>
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -269,4 +216,18 @@
 			</plugin>
 		</plugins>
 	</build>
+	<pluginRepositories>
+		<!-- Configure Sonatype OSS Maven snapshots repository -->
+		<pluginRepository>
+			<id>sonatype-nexus-snapshots</id>
+			<name>Sonatype Nexus Snapshots</name>
+			<url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+			<snapshots>
+				<enabled>true</enabled>
+			</snapshots>
+			<releases>
+				<enabled>false</enabled>
+			</releases>
+		</pluginRepository>
+	</pluginRepositories>
 </project>

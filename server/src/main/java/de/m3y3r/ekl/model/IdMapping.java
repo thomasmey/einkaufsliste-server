@@ -5,6 +5,7 @@ import java.util.UUID;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 
 @Entity
 @Table(name="id_mapping",
@@ -38,6 +39,7 @@ public class IdMapping implements Serializable {
 
 	@Column(name = "id_extern", nullable=false)
 	@NotNull
+	@Size(min=16, max=16)
 	private UUID idExtern;
 
 	public Integer getId() {

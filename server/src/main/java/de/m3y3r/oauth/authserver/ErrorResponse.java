@@ -3,8 +3,8 @@ package de.m3y3r.oauth.authserver;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
+//import com.fasterxml.jackson.annotation.JsonInclude;
+//import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 @XmlRootElement
 public class ErrorResponse {
@@ -32,7 +32,7 @@ public class ErrorResponse {
 		return error;
 	}
 
-	@JsonInclude(Include.NON_NULL)
+	//@JsonInclude(Include.NON_NULL)
 	public String getErrorDescription() {
 		return errorDescription;
 	}
@@ -40,7 +40,7 @@ public class ErrorResponse {
 		this.errorDescription = error_description;
 	}
 
-	@JsonInclude(Include.NON_NULL)
+	//@JsonInclude(Include.NON_NULL)
 	public String getErrorUri() {
 		return errorUri;
 	}
