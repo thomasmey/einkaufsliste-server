@@ -152,8 +152,35 @@
 						<goals>
 							<goal>start-server</goal>
 						</goals>
+						<configuration>
+							<!-- <serverStartTimeout>60</serverStartTimeout> -->
+							<!-- <applications>${project.build.finalName}.war</applications> -->
+<!-- 					<bootstrapProperties>
+						<httpPort>8080</httpPort>
+					</bootstrapProperties>
+ -->						</configuration>
+					</execution>
+<!-- 					<execution>
+						<id>deploy web application</id>
+						<phase>pre-integration-test</phase>
+						<goals>
+							<goal>deploy</goal>
+						</goals>
+						<configuration>
+							<appArchive>${project.build.directory}/${project.build.finalName}.war</appArchive>
+						</configuration>
 					</execution>
 					<execution>
+						<id>undeploy web application</id>
+						<phase>post-integration-test</phase>
+						<goals>
+							<goal>undeploy</goal>
+						</goals>
+						<configuration>
+							<appArchive>${project.build.finalName}.war</appArchive>
+						</configuration>
+					</execution>
+ -->					<execution>
 						<id>stop-server</id>
 						<phase>post-integration-test</phase>
 						<goals>
@@ -165,9 +192,8 @@
 					</execution>
 				</executions>
 				<configuration>
-					<configFile>${project.build.testOutputDirectory}/wlp/server.xml</configFile>
 					<bootstrapProperties>
-						<httpPort>8080</httpPort>
+						<webapp.path>${project.build.directory}/${project.build.finalName}.war</webapp.path>
 					</bootstrapProperties>
 					<jvmOptions>
 						<param>-Xmx512m</param>

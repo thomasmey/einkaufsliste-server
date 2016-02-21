@@ -1,0 +1,33 @@
+<server>
+    <featureManager>
+        <feature>beanValidation-1.1</feature>
+        <feature>cdi-1.2</feature>
+        <feature>jaxrs-2.0</feature>
+        <feature>jdbc-4.1</feature>
+        <feature>jndi-1.0</feature>
+        <feature>jsonp-1.0</feature>
+        <feature>managedBeans-1.0</feature>
+        <feature>servlet-3.1</feature>
+        <feature>jpa-2.1</feature>
+    </featureManager>
+
+    <library id="postgres-lib">
+        <fileset dir="/usr/share/java/" includes="postgresql-jdbc.jar"/>
+    </library>
+
+    <jdbcDriver libraryRef="postgres-lib" id="postgres-driver"
+                javax.sql.ConnectionPoolDataSource="org.postgresql.ds.PGConnectionPoolDataSource"
+                javax.sql.XADataSource="org.postgresql.xa.PGXADataSource"/>
+
+    <dataSource id="eklDS" jndiName="jdbc/eklDS" jdbcDriverRef="postgres-driver">
+        <connectionManager id="postgres-conMgr" maxPoolSize="3"/>
+        <properties user="${DB_USERNAME}"
+                    password="${DB_PASSWORD}"
+                    serverName="localhost"
+                    portNumber="5432"
+                    databaseName="app"
+                    />
+    </dataSource>
+
+    <application name='ekl' location="${webapp.path}" type='war' context-root='/ekl'/>
+</server>

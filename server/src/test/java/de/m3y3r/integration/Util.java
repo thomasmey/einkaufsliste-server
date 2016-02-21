@@ -16,11 +16,11 @@ import javax.ws.rs.core.Response.Status;
 public class Util {
 
 	private static final String INTEGRATION_TEST_ENV = "/integration-test-env.properties";
-	private static final String BASE_URL = "http://localhost:";
+	private static final String BASE_URL = "http://localhost:9080/ekl";
 	private static Map<String,String> env = readEnvs();
 
 	public static String getBaseUrl() {
-		return BASE_URL + env.get("PORT");
+		return BASE_URL /*+ env.get("PORT") */ ;
 	}
 
 	private static Map<String, String> readEnvs() {
