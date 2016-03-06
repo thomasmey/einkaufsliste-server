@@ -9,7 +9,11 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
+import javax.json.Json;
+import javax.json.JsonObject;
+import javax.json.JsonObjectBuilder;
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.FormParam;
@@ -25,14 +29,9 @@ import javax.ws.rs.core.Response;
 import de.m3y3r.common.model.User;
 import de.m3y3r.common.service.UserManager;
 import de.m3y3r.ekl.filter.NoBearerTokenNeeded;
-import de.m3y3r.oauth.authserver.ErrorResponse;
 import de.m3y3r.oauth.authserver.OauthClientManager;
 import de.m3y3r.oauth.authserver.TokenManager;
-import de.m3y3r.oauth.authserver.TokenResponse;
-import de.m3y3r.oauth.authserver.TokenResponse.TokenType;
 import de.m3y3r.oauth.filter.RateLimit;
-import de.m3y3r.oauth.authserver.ErrorResponse.ErrorType;
-import de.m3y3r.oauth.model.OauthClient;
 import de.m3y3r.oauth.model.Token;
 import de.m3y3r.oauth.util.PasswordUtil;
 
@@ -41,6 +40,7 @@ import de.m3y3r.oauth.util.PasswordUtil;
  * @author thomas
  *
  */
+@RequestScoped
 @Path(value = "/token")
 public class AccessToken {
 
@@ -80,26 +80,26 @@ public class AccessToken {
 
 		// ensure TLS or in bluemix environment that "x-forwarded-proto" is https
 		if(!(request.isSecure() || "https".equals(request.getHeader("X-Forwarded-Proto")))) {
-			ErrorResponse errorMsg = new ErrorResponse(ErrorType.INVALID_REQUEST);
+			JsonObject errorMsg =  createErrorResponse("invalid_request");
 			return Response.status(Response.Status.BAD_REQUEST).entity(errorMsg).build();
 		}
 
 		if(!"password".equals(grantType)) {
-			ErrorResponse errorMsg = new ErrorResponse(ErrorType.UNSUPPORTED_GRANT_TYPE);
+			JsonObject errorMsg = createErrorResponse("UNSUPPORTED_GRANT_TYPE");
 			return Response.status(Response.Status.BAD_REQUEST).entity(errorMsg).build();
 		}
 
 		// require client authentication for confidential clients and authenticate it
 		Object[] clientIdSecret = parseBasicAuthHeader(clientAuthorization);
 		if(!isClientOkay(clientIdSecret)) {
-			ErrorResponse errorMsg = new ErrorResponse(ErrorType.INVALID_CLIENT);
+			JsonObject errorMsg = createErrorResponse("INVALID_CLIENT");
 			return Response.status(Response.Status.BAD_REQUEST).entity(errorMsg).build();
 		}
 
 		//validate the resource owner password credentials
-		User user = oauthUserManager.getUserByUsername(username);
+		JsonObject user = oauthUserManager.getUserByUsername(username);
 		if(!isUserOkay(user, password)) {
-			ErrorResponse errorMsg = new ErrorResponse(ErrorType.INVALID_REQUEST);
+			JsonObject errorMsg = createErrorResponse("INVALID_REQUEST");
 			return Response.status(Response.Status.BAD_REQUEST).entity(errorMsg).build();
 		}
 
@@ -119,11 +119,11 @@ public class AccessToken {
 			token = tokenManager.newToken(clientId, username);
 			token.getContext().setUser(user);
 		}
-		assert user.getUsername().equals(token.getContext().getUser().getUsername());
+		assert user.getString("username").equals(token.getContext().getUser().getString("username"));
 
 		// convert into TokenResponse
-		TokenResponse tokenMsg = new TokenResponse();
-		tokenMsg.setTokenType(TokenType.BEARER);
+		JsonObjectBuilder tokenMsg = Json.createObjectBuilder();
+		tokenMsg.add("token_type", "Bearer");
 		ByteBuffer bb = ByteBuffer.allocate(16);
 		bb.putLong(token.getId().getMostSignificantBits());
 		bb.putLong(token.getId().getLeastSignificantBits());
@@ -132,14 +132,24 @@ public class AccessToken {
 		byte[] ba = new byte[encodedId.limit()];
 		encodedId.get(ba);
 
-		tokenMsg.setAccesToken(new String(ba, iso8859));
-		tokenMsg.setExpiresIn(token.getExpiresIn());
+		tokenMsg.add("access_token", new String(ba, iso8859));
+		tokenMsg.add("expires_in", token.getExpiresIn());
 
 		//FIXME: Also set for error case?!
 		CacheControl cacheControl = new CacheControl();
 		cacheControl.setNoStore(true);
 		cacheControl.setNoCache(true);
-		return Response.ok(tokenMsg).cacheControl(cacheControl).build();
+		return Response.ok(tokenMsg.build()).cacheControl(cacheControl).build();
+	}
+
+	private JsonObject createErrorResponse(String error, String... errorDescUri) {
+		JsonObjectBuilder b = Json.createObjectBuilder();
+		b.add("error", error);
+		if(errorDescUri.length > 0)
+			b.add("error_description", errorDescUri[0]);
+		if(errorDescUri.length > 1)
+			b.add("error_uri", errorDescUri[1]);
+		return b.build();
 	}
 
 	private Object[] parseBasicAuthHeader(String clientAuthorization) {
@@ -187,13 +197,15 @@ public class AccessToken {
 			return false;
 
 		byte[] clientSecret = (byte[]) clientIdSecret[1];
-		OauthClient client = oauthClientManager.getClientByClientId((String) clientIdSecret[0]);
+		JsonObject client = oauthClientManager.getClientByClientId((String) clientIdSecret[0]);
 		if(client == null)
 			return false;
-		if(!client.isActive())
+		if(!client.getBoolean("active"))
 			return false;
 	
-		return passwordUtil.isPasswordOkay(client.getHashedPassword(), client.getSalt(), clientSecret);
+		byte[] pw = Base64.getDecoder().decode(client.getString("hashedPassword"));
+		byte[] salt = Base64.getDecoder().decode(client.getString("salt"));
+		return passwordUtil.isPasswordOkay(pw, salt, clientSecret);
 	}
 
 	private String[] checkScopes(String scopes) {
@@ -221,13 +233,15 @@ public class AccessToken {
 		return resultScopes.toArray(new String[0]);
 	}
 
-	private boolean isUserOkay(User user, String password) {
+	private boolean isUserOkay(JsonObject user, String password) {
 
 		if(user == null)
 			return false;
-		if(!user.isActive())
+		if(!user.getBoolean("active"))
 			return false;
 
-		return passwordUtil.isPasswordOkay(user.getHashedPassword(), user.getSalt(), password.getBytes(utf8));
+		byte[] pw = Base64.getDecoder().decode(user.getString("hashedPassword"));
+		byte[] salt = Base64.getDecoder().decode(user.getString("salt"));
+		return passwordUtil.isPasswordOkay(pw, salt, password.getBytes(utf8));
 	}
 }

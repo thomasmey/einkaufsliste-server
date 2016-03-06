@@ -1,15 +1,15 @@
 package de.m3y3r.oauth.model;
 
-import de.m3y3r.common.model.User;
+import javax.json.JsonObject;
 
 public class Context {
 
-	private User user;
+	private JsonObject user;
 
-	public User getUser() {
+	public JsonObject getUser() {
 		return user;
 	}
-	public void setUser(User user) {
+	public void setUser(JsonObject user) {
 		this.user = user;
 	}
 }

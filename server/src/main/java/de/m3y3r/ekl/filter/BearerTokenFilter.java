@@ -8,6 +8,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.annotation.Priority;
+import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.ws.rs.Priorities;
 import javax.ws.rs.container.ContainerRequestContext;
@@ -19,6 +21,7 @@ import javax.ws.rs.ext.Provider;
 import de.m3y3r.oauth.authserver.TokenManager;
 import de.m3y3r.oauth.model.Token;
 
+@ApplicationScoped
 @Provider
 @Priority(Priorities.AUTHORIZATION)
 public class BearerTokenFilter implements ContainerRequestFilter {

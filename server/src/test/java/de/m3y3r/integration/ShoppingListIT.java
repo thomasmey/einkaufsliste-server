@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.List;
 
+import javax.json.Json;
+import javax.json.JsonObject;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.ClientRequestContext;
@@ -19,11 +21,6 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import de.m3y3r.ekl.api.model.ItemPost;
-import de.m3y3r.ekl.api.model.ResourceId;
-import de.m3y3r.ekl.api.model.ShoppingListGet;
-import de.m3y3r.ekl.api.model.ShoppingListPost;
-import de.m3y3r.oauth.authserver.TokenResponse;
 import de.m3y3r.oauth.filter.RateLimitFilter;
 
 public class ShoppingListIT {
@@ -50,7 +47,7 @@ public class ShoppingListIT {
 		WebTarget targetApp = client.target(Util.getBaseUrl()).path(APP_PATH_EKL).register(bearerToken);
 		WebTarget listEndpoint = targetApp.path(ENDPOINT_LIST);
 
-		List<ShoppingListGet> list = listEndpoint.request().accept(MediaType.APPLICATION_JSON).get(new GenericType<List<ShoppingListGet>>() {});
+		List<JsonObject> list = listEndpoint.request().accept(MediaType.APPLICATION_JSON).get(new GenericType<List<JsonObject>>() {});
 		client.close();
 
 		Assert.assertNotNull(list);
@@ -65,8 +62,8 @@ public class ShoppingListIT {
 		WebTarget targetApp = client.target(Util.getBaseUrl()).path(APP_PATH_EKL).register(bearerToken);
 		WebTarget listEndpoint = targetApp.path(ENDPOINT_LIST);
 
-		ShoppingListPost sl = new ShoppingListPost();
-		ResourceId rid = listEndpoint.request().post(Entity.entity(sl, MediaType.APPLICATION_JSON), ResourceId.class);
+		JsonObject sl = Json.createObjectBuilder().build();
+		JsonObject rid = listEndpoint.request().post(Entity.entity(sl, MediaType.APPLICATION_JSON), JsonObject.class);
 		client.close();
 
 //		Assert.assertNotNull(rid);
@@ -81,28 +78,28 @@ public class ShoppingListIT {
 		WebTarget targetApp = client.target(Util.getBaseUrl()).path(APP_PATH_EKL).register(bearerToken);
 		WebTarget listEndpoint = targetApp.path(ENDPOINT_LIST);
 
-		List<ShoppingListGet> list = listEndpoint.request().accept(MediaType.APPLICATION_JSON).get(new GenericType<List<ShoppingListGet>>() {});
+		List<JsonObject> list = listEndpoint.request().accept(MediaType.APPLICATION_JSON).get(new GenericType<List<JsonObject>>() {});
 
 		Assert.assertNotNull(list);
 		Assert.assertTrue(list.size() > 0);
 
-		ShoppingListGet shoppingList0 = list.get(0);
+		JsonObject shoppingList0 = list.get(0);
 
 		WebTarget itemEndpoint = listEndpoint.path("/{id}/item");
-		WebTarget itemEndpointId = itemEndpoint.resolveTemplate("id", list.get(0).getId());
-		ItemPost item = new ItemPost();
-		item.setName("Walnüsse");
-		item.setCount(BigDecimal.valueOf(1));
-		item.setUnit("UNIT");
+		WebTarget itemEndpointId = itemEndpoint.resolveTemplate("id", list.get(0).get("id"));
+		JsonObject item = Json.createObjectBuilder().add("name", "Walnüsse")
+				.add("count", BigDecimal.valueOf(1))
+				.add("unit", "UNIT")
+				.build();
 
-		ResourceId rid = itemEndpointId.request().post(Entity.entity(item, MediaType.APPLICATION_JSON), ResourceId.class);
+		JsonObject rid = itemEndpointId.request().post(Entity.entity(item, MediaType.APPLICATION_JSON), JsonObject.class);
 
 		Assert.assertNotNull(rid);
-		Assert.assertNotNull(rid.getId());
+		Assert.assertNotNull(rid.getString("id"));
 
-		ShoppingListGet shoppingListGet = listEndpoint.path("/{id}").resolveTemplate("id", shoppingList0.getId()).request()
+		JsonObject shoppingListGet = listEndpoint.path("/{id}").resolveTemplate("id", shoppingList0.get("id")).request()
 		.accept(MediaType.APPLICATION_JSON)
-		.get(ShoppingListGet.class);
+		.get(JsonObject.class);
 
 		client.close();
 		Assert.assertNotNull(shoppingListGet);
@@ -120,7 +117,7 @@ class BearerToken implements ClientRequestFilter {
 	private static final String ENDPOINT_TOKEN = "token";
 	private static final String appPathOauth = "oauth";
 
-	private TokenResponse getToken() throws InterruptedException {
+	private JsonObject getToken() throws InterruptedException {
 
 		synchronized (BearerToken.class) {
 			long ct = System.currentTimeMillis();
@@ -144,16 +141,16 @@ class BearerToken implements ClientRequestFilter {
 		form.param("grant_type", "password");
 		form.param("username", Util.getConfig("userName"));
 		form.param("password", Util.getConfig("userPass"));
-		TokenResponse tokenResponse = null;
+		JsonObject tokenResponse = null;
 		tokenResponse = tokenEndpoint.request()
 			.header("X-Forwarded-Proto", "https")
-			.accept(MediaType.APPLICATION_JSON).post(Entity.form(form), TokenResponse.class);
+			.accept(MediaType.APPLICATION_JSON).post(Entity.form(form), JsonObject.class);
 		client.close();
 		return tokenResponse;
 	}
 
 	public BearerToken() throws InterruptedException {
-		this.accessToken = getToken().getAccesToken();
+		this.accessToken = getToken().getString("access_token");
 	}
 
 	@Override

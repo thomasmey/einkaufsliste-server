@@ -6,7 +6,6 @@ import java.util.concurrent.TimeUnit;
 
 public class Token {
 
-
 	private final UUID id;
 	private final Date entryTs;
 	private final int validInSeconds;

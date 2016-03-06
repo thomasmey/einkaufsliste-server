@@ -15,19 +15,14 @@
 
 	<dependencies>
 		<dependency>
-			<groupId>de.m3y3r</groupId>
-			<artifactId>einkaufsliste-server-model</artifactId>
+			<groupId>de.m3y3r.einkaufsliste</groupId>
+			<artifactId>model</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>javax</groupId>
 			<artifactId>javaee-api</artifactId>
 			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.mapstruct</groupId>
-			<artifactId>mapstruct-jdk8</artifactId>
-			<version>${mapstruct.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.jboss.resteasy</groupId>
@@ -40,6 +35,11 @@
 			<artifactId>resteasy-jackson2-provider</artifactId>
 			<version>${resteasy.version}</version>
 			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>clj-json</groupId>
+			<artifactId>clj-json</artifactId>
+			<version>0.5.3</version>
 		</dependency>
 		<dependency>
 			<groupId>com.fasterxml.jackson.module</groupId>
@@ -155,32 +155,16 @@
 						<configuration>
 							<!-- <serverStartTimeout>60</serverStartTimeout> -->
 							<!-- <applications>${project.build.finalName}.war</applications> -->
-<!-- 					<bootstrapProperties>
-						<httpPort>8080</httpPort>
-					</bootstrapProperties>
- -->						</configuration>
-					</execution>
-<!-- 					<execution>
-						<id>deploy web application</id>
-						<phase>pre-integration-test</phase>
-						<goals>
-							<goal>deploy</goal>
-						</goals>
-						<configuration>
-							<appArchive>${project.build.directory}/${project.build.finalName}.war</appArchive>
+							<!-- <bootstrapProperties> <httpPort>8080</httpPort> </bootstrapProperties> -->
 						</configuration>
 					</execution>
+					<!-- <execution> <id>deploy web application</id> <phase>pre-integration-test</phase> 
+						<goals> <goal>deploy</goal> </goals> <configuration> <appArchive>${project.build.directory}/${project.build.finalName}.war</appArchive> 
+						</configuration> </execution> <execution> <id>undeploy web application</id> 
+						<phase>post-integration-test</phase> <goals> <goal>undeploy</goal> </goals> 
+						<configuration> <appArchive>${project.build.finalName}.war</appArchive> </configuration> 
+						</execution> -->
 					<execution>
-						<id>undeploy web application</id>
-						<phase>post-integration-test</phase>
-						<goals>
-							<goal>undeploy</goal>
-						</goals>
-						<configuration>
-							<appArchive>${project.build.finalName}.war</appArchive>
-						</configuration>
-					</execution>
- -->					<execution>
 						<id>stop-server</id>
 						<phase>post-integration-test</phase>
 						<goals>
@@ -211,34 +195,6 @@
 						</goals>
 					</execution>
 				</executions>
-			</plugin>
-			<plugin>
-				<groupId>org.bsc.maven</groupId>
-				<artifactId>maven-processor-plugin</artifactId>
-				<configuration>
-					<defaultOutputDirectory>
-						${project.build.directory}/generated-sources
-					</defaultOutputDirectory>
-					<processors>
-						<processor>org.mapstruct.ap.MappingProcessor</processor>
-					</processors>
-				</configuration>
-				<executions>
-					<execution>
-						<id>mapstruct-generate-sources</id>
-						<phase>generate-sources</phase>
-						<goals>
-							<goal>process</goal>
-						</goals>
-					</execution>
-				</executions>
-				<dependencies>
-					<dependency>
-						<groupId>org.mapstruct</groupId>
-						<artifactId>mapstruct-processor</artifactId>
-						<version>${mapstruct.version}</version>
-					</dependency>
-				</dependencies>
 			</plugin>
 		</plugins>
 	</build>

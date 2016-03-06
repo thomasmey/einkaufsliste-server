@@ -21,8 +21,6 @@
 		<hibernate.validator.version>5.2.2.Final</hibernate.validator.version>
 		<hibernate.jpa.version>5.0.2.Final</hibernate.jpa.version>
 		<junit.version>4.12</junit.version>
-		<wildfly-swarm.version>1.0.0.Alpha7-SNAPSHOT</wildfly-swarm.version>
-		<mapstruct.version>1.0.0.Final</mapstruct.version>
 		<json-p.version>1.0.4</json-p.version>
 		<!-- should match the libraries used by the wildfly-swarm modules -->
 		<jackson.version>2.5.4</jackson.version>
@@ -92,11 +90,6 @@
 					<artifactId>maven-failsafe-plugin</artifactId>
 					<version>2.19</version>
 				</plugin>
-				<plugin>
-					<groupId>org.bsc.maven</groupId>
-					<artifactId>maven-processor-plugin</artifactId>
-					<version>2.2.4</version>
-				</plugin>
 			</plugins>
 		</pluginManagement>
 	</build>
@@ -105,4 +98,10 @@
 		<connection>scm:git:file://.</connection>
 		<developerConnection>scm:git:file://.</developerConnection>
 	</scm>
+	<repositories>
+		<repository>
+			<id>clojars.org</id>
+			<url>http://clojars.org/repo</url>
+		</repository>
+	</repositories>
 </project>
