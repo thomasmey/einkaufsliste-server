@@ -1,6 +1,7 @@
 package de.m3y3r.oauth.util;
 
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -8,15 +9,20 @@ import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.annotation.Resource;
 import javax.enterprise.context.ApplicationScoped;
 import javax.json.Json;
+import javax.json.JsonNumber;
 import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
+import javax.json.JsonString;
+import javax.json.JsonValue;
 import javax.sql.DataSource;
 
 @ApplicationScoped
@@ -61,6 +67,8 @@ public class DbUtil {
 					case Types.BOOLEAN:
 					case Types.BIT:
 						b.add(cn[i], rs.getBoolean(idb)); break;
+					case Types.OTHER:
+						b.add(cn[i], rs.getObject(idb).toString()); break;
 					default:
 						throw new IllegalArgumentException("Unsupported SQL Type:"+ ct);
 				}
@@ -109,6 +117,70 @@ public class DbUtil {
 			Logger.getLogger(DbUtil.class.getName()).log(Level.SEVERE, "DB failed!", e);
 		}
 		return null;
+	}
+
+	public int insertFromJson(String table, JsonObject obj) {
+		StringBuilder sb = new StringBuilder().append("insert into ").append(table).append(" (");
+		for(String k: obj.keySet()) {
+			sb.append(toSqlName(k)).append(", ");
+		}
+		sb.setLength(sb.length() - ", ".length());
+		sb.append(" ) values ( ");
+		for(String k: obj.keySet()) {
+			sb.append("?, ");
+		}
+		sb.setLength(sb.length() - ", ".length());
+		sb.append(')');
+
+		try {
+			Connection c = ds.getConnection();
+			DatabaseMetaData dmd = c.getMetaData();
+			ResultSet columns = dmd.getColumns(null, null, table, "%");
+			HashMap<String, Object[]> ct = new HashMap<String, Object[]>();
+			while(columns.next()) {
+				ct.put(columns.getString("COLUMN_NAME"), new Object[] {columns.getInt("DATA_TYPE"), columns.getString("TYPE_NAME")} );
+			}
+			PreparedStatement ps = c.prepareStatement(sb.toString());
+			int i = 1;
+			for(String k: obj.keySet()) {
+				JsonValue v = obj.get(k);
+				switch((Integer)ct.get(toSqlName(k))[0]) {
+				case Types.CHAR:
+				case Types.VARCHAR:
+					ps.setString(i, v.toString()); break;
+				case Types.INTEGER:
+					ps.setInt(i, ((JsonNumber)v).intValue()); break;
+				case Types.OTHER:
+					switch((String) ct.get(toSqlName(k))[1]) {
+					case "uuid":
+						ps.setObject(i, UUID.fromString(((JsonString)v).getString())); break;
+					}
+					break;
+				default:
+					throw new IllegalArgumentException();
+				}
+				i++;
+			}
+			int n = ps.executeUpdate();
+			ps.close();
+			c.close();
+
+			return n;
+		} catch (SQLException e) {
+			Logger.getLogger(DbUtil.class.getName()).log(Level.SEVERE, "DB failed!", e);
+		}
+		return 0;
+	}
+
+	private String toSqlName(String k) {
+		StringBuilder sb = new StringBuilder(k);
+		for(int i = 0; i < sb.length(); i++) {
+			if(Character.isUpperCase(sb.charAt(i))) {
+				sb.setCharAt(i, Character.toLowerCase(sb.charAt(i)));
+				sb.insert(i, '_');
+			}
+		}
+		return sb.toString();
 	}
 
 }

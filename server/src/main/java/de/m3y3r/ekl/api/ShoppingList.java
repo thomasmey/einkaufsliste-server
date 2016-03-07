@@ -3,7 +3,6 @@ package de.m3y3r.ekl.api;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
@@ -26,6 +25,7 @@ import javax.ws.rs.core.MediaType;
 import de.m3y3r.ekl.filter.BearerTokenFilter;
 import de.m3y3r.oauth.model.Token;
 import de.m3y3r.oauth.util.DbUtil;
+import de.m3y3r.oauth.util.MappingUtil;
 
 @RequestScoped
 @Path("list")
@@ -33,45 +33,21 @@ public class ShoppingList {
 
 	private static class Mapper {
 		public static JsonObject shoppingListToExternal(JsonObject s) {
-			// filter fields
 			List<String> directMapping = Arrays.asList("id", "name");
-			JsonObjectBuilder t = transferDirectMappings(s, directMapping);
-
-			//map id
-
+			JsonObjectBuilder t = MappingUtil.transferDirectMappings(s, directMapping);
 			return t.build();
 		}
 
-		/**
-		 * transfer 1:1 mappings
-		 * @param s
-		 * @param directMappings
-		 * @return
-		 */
-		private static JsonObjectBuilder transferDirectMappings(JsonObject s, List<String> directMappings) {
-			JsonObjectBuilder t = Json.createObjectBuilder();
-			for(String key: s.keySet()) {
-				if(directMappings.contains(key))
-					switch(s.getValueType()) {
-					case NUMBER:
-						t.add(key, s.getBoolean(key)); break;
-					case STRING:
-						t.add(key, s.getString(key)); break;
-					case TRUE: case FALSE:
-						t.add(key, s.getBoolean(key));
-					}
-			}
+		public static JsonObjectBuilder postItemToInternal(JsonObject s) {
+			List<String> directMapping = Arrays.asList("name");
+			JsonObjectBuilder t = MappingUtil.transferDirectMappings(s, directMapping);
 			return t;
 		}
 
-		public static JsonObject postItemToInternal(JsonObject itemPost) {
-			return itemPost;
-		}
-	}
-
-	private class IdMapper {
-		public JsonObject extIdToIntId(String uuid) {
-			return dbUtil.getAsJson("select * from id_mapping t where t.id_extern = ? and object_name = ?", UUID.fromString(uuid),"einkaufsliste");
+		public static JsonObjectBuilder postEklToInternal(JsonObject s) {
+			List<String> directMapping = Arrays.asList("name");
+			JsonObjectBuilder t = MappingUtil.transferDirectMappings(s, directMapping);
+			return t;
 		}
 	}
 
@@ -97,20 +73,28 @@ public class ShoppingList {
 	@Transactional
 	@POST
 	@Consumes(MediaType.APPLICATION_JSON)
-	public JsonObject create(JsonObject ekl) {
-		return null;
+	@Produces(MediaType.APPLICATION_JSON)
+	public JsonObject create(JsonObject eklPost) {
+		Token token = (Token) request.getAttribute(BearerTokenFilter.REQ_ATTRIB_TOKEN);
+
+		JsonObjectBuilder ekl = Mapper.postEklToInternal(eklPost);
+		ekl.add("ownerId", token.getContext().getUser().getInt("id"));
+		ekl.add("id", UUID.randomUUID().toString());
+
+		JsonObject e = ekl.build();
+		dbUtil.insertFromJson("einkaufsliste", e);
+		return e;
 	}
 
 	@GET
 	@Path("{id}")
 	@Produces(MediaType.APPLICATION_JSON)
 	public JsonObject getList(
-			@PathParam("id") @NotNull String uuid
+			@PathParam("id") @NotNull UUID uuid
 			) throws NotAuthorisedException {
 		Token token = (Token) request.getAttribute(BearerTokenFilter.REQ_ATTRIB_TOKEN);
 
-		JsonObject id = new IdMapper().extIdToIntId(uuid);
-		JsonObject ekl = dbUtil.getAsJson("select * from einkaufsliste t where t.id = ?", id.getInt("idIntern")); 
+		JsonObject ekl = dbUtil.getAsJson("select * from einkaufsliste t where t.id = ?", uuid); 
 		if(ekl.getInt("ownerId") != token.getContext().getUser().getInt("id"))
 			throw new NotAuthorisedException();
 
@@ -124,29 +108,24 @@ public class ShoppingList {
 	@Produces(MediaType.APPLICATION_JSON)
 	public JsonObject addItem(
 			@NotNull JsonObject itemPost,
-			@PathParam("id") @NotNull String uuidEkl
+			@PathParam("id") @NotNull UUID uuidEkl
 			) throws NotAuthorisedException {
 		Token token = (Token) request.getAttribute(BearerTokenFilter.REQ_ATTRIB_TOKEN);
 
-		JsonObject id = new IdMapper().extIdToIntId(uuidEkl);
-		JsonObject ekl = dbUtil.getAsJson("select * from einkaufsliste t where t.id = ?", id.getInt("idIntern")); 
+		JsonObject ekl = dbUtil.getAsJson("select * from einkaufsliste t where t.id = ?", uuidEkl); 
 		if(ekl.getInt("ownerId") != token.getContext().getUser().getInt("id"))
 			throw new NotAuthorisedException();
 
-		JsonObject item = Mapper.postItemToInternal(itemPost);
+		JsonObjectBuilder eklb = MappingUtil.toBuilder(ekl);
+		JsonObjectBuilder item = Mapper.postItemToInternal(itemPost);
 //		Item item = itemMapper.map(itemPost);
 //		item.setEkl(ekl);
 //		item.setStatus(ItemStatus.NEEDED);
 //		ekl.getItems().add(item);
 //		em.persist(item);
 //		em.flush();
-//		IdMapping idm = new IdMapping();
-		UUID uuidItem = UUID.randomUUID();
-//		idm.setIdExtern(uuidItem);
-//		idm.setIdIntern(item.getId());
-//		idm.setObjectName(IdMapping.ON_ITEM);
-//		em.persist(idm);
 
+		UUID uuidItem = UUID.randomUUID();
 		return Json.createObjectBuilder().add("id", uuidItem.toString()).build();
 	}
 }
