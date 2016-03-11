@@ -33,6 +33,19 @@ CREATE TABLE einkaufsliste
       REFERENCES users (id) MATCH SIMPLE
       ON UPDATE NO ACTION ON DELETE NO ACTION
 );
+CREATE TABLE item (
+  id uuid not null,
+  data_version integer,
+  menge numeric,
+  name varchar not null,
+  status varchar not null,
+  unit varchar not null,
+  ekl_id uuid,
+  CONSTRAINT item_pkey PRIMARY KEY (id),
+  CONSTRAINT fk_item_ekl_id FOREIGN KEY (ekl_id)
+      REFERENCES einkaufsliste (id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION
+);
 CREATE TABLE einkauf
 (
   id integer NOT NULL,
