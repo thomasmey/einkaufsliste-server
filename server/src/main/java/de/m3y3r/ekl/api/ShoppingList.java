@@ -120,7 +120,7 @@ public class ShoppingList {
 		checkAuthorisation(token, ekl.getInt("ownerId"));
 
 		JsonObjectBuilder item = Mapper.postItemToInternal(itemPost);
-		if(checkMandatoryAttributes(item, l("menge", "unit", "name")))
+		if(!checkMandatoryAttributes(item, l("menge", "unit", "name")))
 			throw new IllegalArgumentException();
 
 		UUID uuidItem = UUID.randomUUID();
