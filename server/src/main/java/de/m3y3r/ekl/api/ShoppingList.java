@@ -1,6 +1,5 @@
 package de.m3y3r.ekl.api;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -120,8 +119,6 @@ public class ShoppingList {
 		checkAuthorisation(token, ekl.getInt("ownerId"));
 
 		JsonObjectBuilder item = Mapper.postItemToInternal(itemPost);
-		if(!checkMandatoryAttributes(item, l("menge", "unit", "name")))
-			throw new IllegalArgumentException();
 
 		UUID uuidItem = UUID.randomUUID();
 		item.add("status", "NEEDED");
@@ -129,14 +126,17 @@ public class ShoppingList {
 		item.add("dataVersion", 1);
 		item.add("eklId", uuidEkl.toString());
 
-		dbUtil.insertFromJson("item", item.build());
+		JsonObject io = item.build();
+		if(!checkMandatoryAttributes(io, l("menge", "unit", "name")))
+			throw new IllegalArgumentException();
+
+		dbUtil.insertFromJson("item", io);
 
 		return Json.createObjectBuilder().add("id", uuidItem.toString()).build();
 	}
 
-	private static boolean checkMandatoryAttributes(JsonObjectBuilder j, List<String> a) {
-		JsonObject jb = j.build();
-		return a.stream().allMatch((k) -> { return jb.containsKey(k); } );
+	private static boolean checkMandatoryAttributes(JsonObject j, List<String> a) {
+		return a.stream().allMatch((k) -> { return j.containsKey(k); } );
 	}
 
 	private JsonObject readEkl(UUID uuidEkl) {

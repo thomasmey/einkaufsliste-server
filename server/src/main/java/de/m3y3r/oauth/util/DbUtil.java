@@ -148,6 +148,8 @@ public class DbUtil {
 				case Types.CHAR:
 				case Types.VARCHAR:
 					ps.setString(i, v.toString()); break;
+				case Types.NUMERIC:
+					ps.setBigDecimal(i, ((JsonNumber)v).bigDecimalValue()); break;
 				case Types.INTEGER:
 					ps.setInt(i, ((JsonNumber)v).intValue()); break;
 				case Types.OTHER:
@@ -157,7 +159,7 @@ public class DbUtil {
 					}
 					break;
 				default:
-					throw new IllegalArgumentException();
+					throw new IllegalArgumentException("attr="+k);
 				}
 				i++;
 			}
