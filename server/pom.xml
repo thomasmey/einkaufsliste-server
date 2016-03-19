@@ -11,7 +11,7 @@
 	<artifactId>server</artifactId>
 	<packaging>war</packaging>
 
-	<name>RESTful server</name>
+	<name>RESTful API server</name>
 
 	<dependencies>
 		<dependency>
@@ -25,6 +25,11 @@
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
+			<groupId>org.clojure</groupId>
+			<artifactId>clojure</artifactId>
+			<version>1.7.0</version>
+		</dependency>
+		<dependency>
 			<groupId>org.jboss.resteasy</groupId>
 			<artifactId>resteasy-client</artifactId>
 			<version>${resteasy.version}</version>
@@ -35,11 +40,6 @@
 			<artifactId>resteasy-jackson2-provider</artifactId>
 			<version>${resteasy.version}</version>
 			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>clj-json</groupId>
-			<artifactId>clj-json</artifactId>
-			<version>0.5.3</version>
 		</dependency>
 		<dependency>
 			<groupId>com.fasterxml.jackson.module</groupId>
@@ -111,6 +111,11 @@
 
 	<build>
 		<plugins>
+			<plugin>
+				<groupId>com.theoryinpractise</groupId>
+				<artifactId>clojure-maven-plugin</artifactId>
+				<version>1.7.1</version>
+			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
