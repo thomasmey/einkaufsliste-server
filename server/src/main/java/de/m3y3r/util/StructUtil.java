@@ -8,14 +8,16 @@ import java.util.Map;
 
 public class StructUtil {
 
+	@SafeVarargs
 	public static <T> List<T> l(T... e) {
 		return Arrays.asList(e);
 	}
 
 	public static <K,V> Map.Entry<K,V> e(K k, V v) {
-		return new AbstractMap.SimpleEntry(k, v);
+		return new AbstractMap.SimpleEntry<K,V>(k, v);
 	}
 
+	@SafeVarargs
 	public static <K,V> Map<K,V> m(Map.Entry<K, V>... e) {
 		HashMap<K, V> m = new HashMap<>();
 		for(Map.Entry<K, V> a: e) 

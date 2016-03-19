@@ -31,4 +31,9 @@ public class MappingUtil {
 		}
 		return t;
 	}
+
+	public static JsonObjectBuilder merge(JsonObject objCurrent, JsonObject objNew) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

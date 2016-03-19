@@ -23,6 +23,7 @@ import javax.ws.rs.core.MediaType;
 
 import de.m3y3r.ekl.filter.BearerTokenFilter;
 import de.m3y3r.oauth.model.Token;
+import de.m3y3r.oauth.util.ApiUtil;
 import de.m3y3r.oauth.util.DbUtil;
 import de.m3y3r.oauth.util.MappingUtil;
 
@@ -93,15 +94,10 @@ public class ShoppingList {
 			) throws NotAuthorisedException {
 		Token token = (Token) request.getAttribute(BearerTokenFilter.REQ_ATTRIB_TOKEN);
 
-		JsonObject ekl = readEkl(uuid);
-		checkAuthorisation(token, ekl.getInt("ownerId"));
+		JsonObject ekl = dbUtil.getAsJsonFrom("readEkl", uuid);
+		ApiUtil.checkAuthorisation(token, ekl.getInt("ownerId"));
 
 		return Mapper.shoppingListToExternal(ekl);
-	}
-
-	private static void checkAuthorisation(Token token, int ownerId) throws NotAuthorisedException {
-		if(ownerId != token.getContext().getUser().getInt("id"))
-			throw new NotAuthorisedException();
 	}
 
 	@Transactional
@@ -115,8 +111,8 @@ public class ShoppingList {
 			) throws NotAuthorisedException {
 		Token token = (Token) request.getAttribute(BearerTokenFilter.REQ_ATTRIB_TOKEN);
 
-		JsonObject ekl = readEkl(uuidEkl);
-		checkAuthorisation(token, ekl.getInt("ownerId"));
+		JsonObject ekl = dbUtil.getAsJsonFrom("readEkl", uuidEkl);
+		ApiUtil.checkAuthorisation(token, ekl.getInt("ownerId"));
 
 		JsonObjectBuilder item = Mapper.postItemToInternal(itemPost);
 
@@ -127,20 +123,12 @@ public class ShoppingList {
 		item.add("eklId", uuidEkl.toString());
 
 		JsonObject io = item.build();
-		if(!checkMandatoryAttributes(io, l("menge", "unit", "name")))
+		if(!ApiUtil.checkMandatoryAttributes(io, l("menge", "unit", "name")))
 			throw new IllegalArgumentException();
 
 		dbUtil.insertFromJson("item", io);
 
 		return Json.createObjectBuilder().add("id", uuidItem.toString()).build();
-	}
-
-	private static boolean checkMandatoryAttributes(JsonObject j, List<String> a) {
-		return a.stream().allMatch((k) -> { return j.containsKey(k); } );
-	}
-
-	private JsonObject readEkl(UUID uuidEkl) {
-		return dbUtil.getAsJson("select * from einkaufsliste t where t.id = ?", uuidEkl);
 	}
 }
 
